@@ -128,13 +128,24 @@ function calcSoldStock() {
   return sold;
 }
 
-// --- Product Grid ---
-function ecobagSwatchColor(name) {
+// --- Group Config ---
+const GROUP_CONFIGS = {
+  ecobag:   { name: 'エコバッグ', emoji: '👜' },
+  shoehorn: { name: '靴ベラ',     emoji: '✨' },
+};
+
+function variantSwatchColor(name) {
   if (name.includes('赤')) return '#c0392b';
   if (name.includes('カーキ')) return '#7d7a3d';
+  if (name.includes('青')) return '#2980b9';
   return '#2c2c2c';
 }
 
+function variantSwatchBorder(name) {
+  return name.includes('金') ? '#c9a227' : 'rgba(0,0,0,.15)';
+}
+
+// --- Product Grid ---
 function renderProducts() {
   const grid = document.getElementById('product-grid');
   if (!state.products.length) {
@@ -142,36 +153,34 @@ function renderProducts() {
     return;
   }
 
-  const ecobags = state.products.filter(p => p.category === 'ecobag');
-  const others  = state.products.filter(p => p.category !== 'ecobag');
+  const groupCategories = new Set(Object.keys(GROUP_CONFIGS));
+  const others = state.products.filter(p => !groupCategories.has(p.category));
 
   let html = '';
 
-  // エコバッグ グループカード
-  if (ecobags.length) {
-    const totalInCart = ecobags.reduce((s, p) => s + (state.cart[p.id] || 0), 0);
-    const anyAvailable = ecobags.some(p => (state.currentStock[p.id] ?? 0) > 0);
-    const allSoldOut = ecobags.every(p => (state.currentStock[p.id] ?? 0) <= 0);
+  // グループカード（エコバッグ・靴ベラ）
+  for (const [category, config] of Object.entries(GROUP_CONFIGS)) {
+    const items = state.products.filter(p => p.category === category);
+    if (!items.length) continue;
 
-    let cls = 'product-card group-card';
-    if (allSoldOut) cls += ' sold-out';
-    else if (totalInCart > 0) cls += ' in-cart';
+    const totalInCart = items.reduce((s, p) => s + (state.cart[p.id] || 0), 0);
+    const allSoldOut = items.every(p => (state.currentStock[p.id] ?? 0) <= 0);
 
     const badge = totalInCart > 0
       ? `<span class="product-badge badge-qty">×${totalInCart}</span>`
       : allSoldOut ? '<span class="product-badge badge-sold">SOLD OUT</span>' : '';
 
-    const swatches = ecobags.map(p =>
-      `<span class="swatch" style="background:${ecobagSwatchColor(p.name)}" title="${p.name}"></span>`
+    const swatches = items.map(p =>
+      `<span class="swatch" style="background:${variantSwatchColor(p.name)};border-color:${variantSwatchBorder(p.name)}" title="${p.name}"></span>`
     ).join('');
 
-    html += `<div class="${cls}" id="ecobag-group-card" ${allSoldOut ? 'aria-disabled="true"' : ''}>
+    html += `<div class="product-card group-card${allSoldOut ? ' sold-out' : totalInCart > 0 ? ' in-cart' : ''}" data-group="${category}" ${allSoldOut ? 'aria-disabled="true"' : ''}>
       ${badge}
-      <div class="emoji">👜</div>
+      <div class="emoji">${config.emoji}</div>
       <div class="group-info">
-        <div class="pname">エコバッグ</div>
+        <div class="pname">${config.name}</div>
         <div class="swatches">${swatches}</div>
-        <div class="group-sub">${ecobags.length}種類 ¥${ecobags[0].price.toLocaleString()}</div>
+        <div class="group-sub">${items.length}種類 ¥${Math.min(...items.map(p => p.price)).toLocaleString()}</div>
       </div>
     </div>`;
   }
@@ -202,43 +211,45 @@ function renderProducts() {
 
   grid.innerHTML = html;
 
-  const groupCard = document.getElementById('ecobag-group-card');
-  if (groupCard && !groupCard.classList.contains('sold-out')) {
-    groupCard.addEventListener('click', openEcobagModal);
-  }
-
+  grid.querySelectorAll('.group-card:not(.sold-out)').forEach(el => {
+    el.addEventListener('click', () => openVariantModal(el.dataset.group));
+  });
   grid.querySelectorAll('.product-card:not(.sold-out):not(.group-card)').forEach(el => {
     el.addEventListener('click', () => addToCart(el.dataset.id));
   });
 }
 
-// --- Ecobag Modal ---
-function openEcobagModal() {
-  renderEcobagModal();
-  document.getElementById('ecobag-modal').classList.remove('hidden');
+// --- Variant Modal (汎用) ---
+let _currentVariantCategory = null;
+
+function openVariantModal(category) {
+  _currentVariantCategory = category;
+  renderVariantModal(category);
+  document.getElementById('variant-modal').classList.remove('hidden');
 }
 
-function closeEcobagModal() {
-  document.getElementById('ecobag-modal').classList.add('hidden');
+function closeVariantModal() {
+  document.getElementById('variant-modal').classList.add('hidden');
+  _currentVariantCategory = null;
 }
 
-function renderEcobagModal() {
-  const ecobags = state.products.filter(p => p.category === 'ecobag');
-  const grid = document.getElementById('ecobag-variant-grid');
+function renderVariantModal(category) {
+  const config = GROUP_CONFIGS[category];
+  const items = state.products.filter(p => p.category === category);
 
-  grid.innerHTML = ecobags.map(p => {
+  document.getElementById('variant-modal-title').textContent =
+    `${config.emoji} ${config.name}を選択`;
+
+  const grid = document.getElementById('variant-grid-items');
+  grid.innerHTML = items.map(p => {
     const stock = state.currentStock[p.id] ?? 0;
     const qty = state.cart[p.id] || 0;
     const soldOut = stock <= 0;
     const lowStock = !soldOut && stock <= CONFIG.LOW_STOCK_THRESHOLD;
-    const label = p.name.replace('エコバッグ', '').trim();
+    const label = p.name.replace(config.name, '').trim();
 
-    let cls = 'variant-card';
-    if (soldOut) cls += ' sold-out';
-    else if (qty > 0) cls += ' in-cart';
-
-    return `<div class="${cls}" data-id="${p.id}">
-      <div class="swatch-lg" style="background:${ecobagSwatchColor(p.name)}"></div>
+    return `<div class="variant-card${soldOut ? ' sold-out' : qty > 0 ? ' in-cart' : ''}" data-id="${p.id}">
+      <div class="swatch-lg" style="background:${variantSwatchColor(p.name)};border-color:${variantSwatchBorder(p.name)}"></div>
       <div class="variant-label">${label}</div>
       <div class="variant-stock ${lowStock ? 'low' : soldOut ? 'out' : ''}">
         ${soldOut ? 'SOLD OUT' : `残 ${stock}`}
@@ -254,7 +265,7 @@ function renderEcobagModal() {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       addToCart(btn.dataset.id);
-      renderEcobagModal();
+      renderVariantModal(category);
     });
   });
 }
@@ -526,9 +537,9 @@ document.addEventListener('DOMContentLoaded', () => {
     showScreen('staff');
   });
 
-  document.getElementById('ecobag-modal-close').addEventListener('click', closeEcobagModal);
-  document.getElementById('ecobag-modal').addEventListener('click', e => {
-    if (e.target === document.getElementById('ecobag-modal')) closeEcobagModal();
+  document.getElementById('variant-modal-close').addEventListener('click', closeVariantModal);
+  document.getElementById('variant-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('variant-modal')) closeVariantModal();
   });
 
   document.getElementById('staff-display').textContent = '';
