@@ -6,7 +6,6 @@ export const CONFIG = {
   CACHE_VERSION: 'v1',
   PAYMENT_TYPES: {
     cash: { label: '現金',       icon: '💴' },
-    ic:   { label: '交通系IC',   icon: '📱' },
     qr:   { label: 'QRコード',   icon: '🔲' },
     card: { label: 'クレジット', icon: '💳' },
   },

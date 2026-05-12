@@ -362,7 +362,25 @@ function renderCheckout() {
       state.payment = btn.dataset.payment;
       document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
+      const isCash = state.payment === 'cash';
+      document.getElementById('cash-section').classList.toggle('hidden', !isCash);
+      if (isCash) {
+        document.getElementById('cash-received').value = '';
+        document.getElementById('change-row').classList.add('hidden');
+        document.getElementById('change-short').classList.add('hidden');
+        setTimeout(() => document.getElementById('cash-received').focus(), 100);
+      }
       updateRecordBtn();
+    };
+  });
+
+  // 現金受取入力
+  const cashInput = document.getElementById('cash-received');
+  cashInput.oninput = () => updateChange();
+  document.querySelectorAll('.bill-btn').forEach(btn => {
+    btn.onclick = () => {
+      cashInput.value = btn.dataset.amount;
+      updateChange();
     };
   });
 
@@ -370,10 +388,38 @@ function renderCheckout() {
   updateRecordBtn();
 }
 
+function updateChange() {
+  const total = calcCartTotal();
+  const received = parseInt(document.getElementById('cash-received').value, 10) || 0;
+  const change = received - total;
+  const changeRow = document.getElementById('change-row');
+  const changeShort = document.getElementById('change-short');
+
+  if (received === 0) {
+    changeRow.classList.add('hidden');
+    changeShort.classList.add('hidden');
+  } else if (change >= 0) {
+    document.getElementById('change-amount').textContent = `¥${change.toLocaleString()}`;
+    changeRow.classList.remove('hidden');
+    changeShort.classList.add('hidden');
+  } else {
+    changeRow.classList.add('hidden');
+    changeShort.classList.remove('hidden');
+  }
+  updateRecordBtn();
+}
+
 function updateRecordBtn() {
   const btn = document.getElementById('record-btn');
   const hasItems = Object.values(state.cart).some(v => v > 0);
-  btn.disabled = !state.payment || !hasItems;
+  if (!state.payment || !hasItems) { btn.disabled = true; return; }
+  if (state.payment === 'cash') {
+    const total = calcCartTotal();
+    const received = parseInt(document.getElementById('cash-received').value, 10) || 0;
+    btn.disabled = received < total;
+  } else {
+    btn.disabled = false;
+  }
 }
 
 async function recordSale() {

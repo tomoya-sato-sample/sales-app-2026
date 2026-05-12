@@ -259,6 +259,62 @@ html, body {
 .payment-btn.selected { border-color: var(--accent); background: #fff8f3; color: var(--accent); }
 .payment-btn:active { opacity: .8; }
 
+/* Cash Register */
+.cash-section {
+  margin-top: 14px;
+  background: #f8f5f0;
+  border-radius: var(--radius);
+  padding: 14px;
+  border: 1px solid var(--border);
+}
+.cash-label { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; }
+.quick-bills {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.bill-btn {
+  padding: 7px 12px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; color: var(--text);
+}
+.bill-btn:active { background: var(--border); }
+.cash-input-wrap {
+  display: flex; align-items: center;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
+}
+.cash-input-wrap:focus-within { border-color: var(--accent); }
+.yen-sign { font-size: 18px; font-weight: 700; color: var(--text-sub); margin-right: 6px; }
+#cash-received {
+  flex: 1; border: none; outline: none;
+  font-size: 22px; font-weight: 700;
+  background: transparent; color: var(--text);
+  width: 100%;
+}
+.change-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 12px;
+  background: #d4edda;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.change-label { font-size: 14px; font-weight: 700; color: var(--success); }
+.change-amount { font-size: 24px; font-weight: 800; color: var(--success); }
+.change-short {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--danger);
+  padding: 8px;
+  background: #fdecea;
+  border-radius: var(--radius-sm);
+}
+
 .checkout-total {
   margin-top: 20px;
   background: var(--surface);

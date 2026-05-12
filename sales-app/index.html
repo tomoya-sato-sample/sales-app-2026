@@ -75,15 +75,32 @@
         <button class="payment-btn" data-payment="cash">
           <span class="p-icon">💴</span>現金
         </button>
-        <button class="payment-btn" data-payment="ic">
-          <span class="p-icon">📱</span>交通系IC
-        </button>
         <button class="payment-btn" data-payment="qr">
           <span class="p-icon">🔲</span>QRコード
         </button>
         <button class="payment-btn" data-payment="card">
           <span class="p-icon">💳</span>クレジット
         </button>
+      </div>
+
+      <!-- 現金おつり計算 -->
+      <div id="cash-section" class="cash-section hidden">
+        <div class="cash-label">お預かり金額</div>
+        <div class="quick-bills">
+          <button class="bill-btn" data-amount="1000">¥1,000</button>
+          <button class="bill-btn" data-amount="5000">¥5,000</button>
+          <button class="bill-btn" data-amount="10000">¥10,000</button>
+          <button class="bill-btn" data-amount="50000">¥50,000</button>
+        </div>
+        <div class="cash-input-wrap">
+          <span class="yen-sign">¥</span>
+          <input type="number" id="cash-received" inputmode="numeric" placeholder="0" min="0">
+        </div>
+        <div id="change-row" class="change-row hidden">
+          <span class="change-label">おつり</span>
+          <span id="change-amount" class="change-amount">¥0</span>
+        </div>
+        <div id="change-short" class="change-short hidden">金額が不足しています</div>
       </div>
     </div>
 
