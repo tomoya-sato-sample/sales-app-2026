@@ -1,0 +1,19 @@
+{
+  "name": "模擬店レジ",
+  "short_name": "レジ",
+  "description": "済々黌東京同窓会2026 模擬店販売管理",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf7f2",
+  "theme_color": "#1a1714",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

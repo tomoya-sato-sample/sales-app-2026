@@ -1,0 +1,443 @@
+import { CONFIG } from './config.js';
+import {
+  saveTransaction, getPendingTransactions,
+  saveProducts, getProducts,
+  saveStaff, getStaff,
+  saveStockAdjustment,
+} from './db.js';
+import { syncPending, startSync } from './sync.js';
+
+// --- State ---
+let state = {
+  staff: [],
+  currentStaff: null,
+  products: [],
+  currentStock: {},
+  cart: {},           // { productId: qty }
+  payment: null,
+  lastTx: null,
+  activeTab: 'products',
+};
+
+// --- Init ---
+async function init() {
+  if (!('indexedDB' in window)) {
+    showToast('このブラウザはIndexedDBに対応していません', 4000);
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+  await loadStaff();
+  await loadProducts();
+  startSync();
+  window.addEventListener('sync-status', e => updatePendingBadge(e.detail));
+  updatePendingBadge(0);
+}
+
+// --- Staff ---
+async function loadStaff() {
+  let staffList = await getStaff();
+  if (!staffList.length) {
+    staffList = await fetchStaff();
+  }
+  state.staff = staffList;
+
+  const saved = localStorage.getItem('currentStaff');
+  if (saved) {
+    try {
+      state.currentStaff = JSON.parse(saved);
+      showScreen('main');
+      return;
+    } catch (_) {}
+  }
+  renderStaffScreen();
+  showScreen('staff');
+}
+
+async function fetchStaff() {
+  try {
+    const res = await fetch(`${CONFIG.GAS_URL}?action=staff`);
+    const json = await res.json();
+    if (json.data) {
+      await saveStaff(json.data);
+      return json.data;
+    }
+  } catch (_) {}
+  return [];
+}
+
+function renderStaffScreen() {
+  const grid = document.getElementById('staff-grid');
+  grid.innerHTML = state.staff.length
+    ? state.staff.map(s => `
+        <div class="staff-card" data-id="${s.id}" data-name="${s.name}" data-area="${s.area}">
+          <div class="name">${s.name}</div>
+          <div class="area">${s.area}</div>
+        </div>`).join('')
+    : '<p class="loading">スタッフ情報を読み込めませんでした</p>';
+
+  grid.querySelectorAll('.staff-card').forEach(el => {
+    el.addEventListener('click', () => {
+      state.currentStaff = {
+        id: el.dataset.id,
+        name: el.dataset.name,
+        area: el.dataset.area,
+      };
+      localStorage.setItem('currentStaff', JSON.stringify(state.currentStaff));
+      document.getElementById('staff-display').textContent = state.currentStaff.name;
+      showScreen('main');
+    });
+  });
+}
+
+// --- Products ---
+async function loadProducts() {
+  let products = await getProducts();
+  if (!products.length) {
+    products = await fetchProducts();
+  }
+  state.products = products;
+  initStock();
+  renderProducts();
+  renderStockTab();
+}
+
+async function fetchProducts() {
+  try {
+    const res = await fetch(`${CONFIG.GAS_URL}?action=products`);
+    const json = await res.json();
+    if (json.data) {
+      await saveProducts(json.data);
+      return json.data;
+    }
+  } catch (_) {}
+  return [];
+}
+
+function initStock() {
+  state.currentStock = {};
+  state.products.forEach(p => {
+    state.currentStock[p.id] = p.init_stock || 0;
+  });
+}
+
+function calcSoldStock() {
+  const sold = {};
+  state.products.forEach(p => { sold[p.id] = 0; });
+  // sold counts come from locally synced transactions only
+  return sold;
+}
+
+// --- Product Grid ---
+function renderProducts() {
+  const grid = document.getElementById('product-grid');
+  if (!state.products.length) {
+    grid.innerHTML = '<p class="loading">商品を読み込み中...</p>';
+    return;
+  }
+  grid.innerHTML = state.products.map(p => {
+    const stock = state.currentStock[p.id] ?? 0;
+    const qty = state.cart[p.id] || 0;
+    const soldOut = stock <= 0;
+    const lowStock = !soldOut && stock <= CONFIG.LOW_STOCK_THRESHOLD;
+    let cls = 'product-card';
+    if (soldOut) cls += ' sold-out';
+    else if (qty > 0) cls += ' in-cart';
+    else if (lowStock) cls += ' low-stock';
+
+    let badge = '';
+    if (soldOut) badge = '<span class="product-badge badge-sold">SOLD OUT</span>';
+    else if (qty > 0) badge = `<span class="product-badge badge-qty">×${qty}</span>`;
+    else if (lowStock) badge = '<span class="product-badge badge-low">残少</span>';
+
+    return `
+      <div class="${cls}" data-id="${p.id}" ${soldOut ? 'aria-disabled="true"' : ''}>
+        ${badge}
+        <div class="emoji">${p.emoji || '🛒'}</div>
+        <div class="pname">${p.name}</div>
+        <div class="price">¥${p.price.toLocaleString()}</div>
+      </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.product-card:not(.sold-out)').forEach(el => {
+    el.addEventListener('click', () => addToCart(el.dataset.id));
+  });
+}
+
+function addToCart(id) {
+  const stock = state.currentStock[id] ?? 0;
+  const current = state.cart[id] || 0;
+  if (current >= stock) {
+    showToast('在庫がありません');
+    return;
+  }
+  state.cart[id] = current + 1;
+  renderProducts();
+  updateCartFooter();
+}
+
+function updateCartFooter() {
+  const footer = document.getElementById('cart-footer');
+  const total = calcCartTotal();
+  const count = Object.values(state.cart).reduce((s, v) => s + v, 0);
+  document.getElementById('cart-total').textContent = `¥${total.toLocaleString()}`;
+  document.getElementById('cart-count').textContent = `${count}点`;
+  footer.classList.toggle('empty', count === 0);
+}
+
+function calcCartTotal() {
+  return Object.entries(state.cart).reduce((sum, [id, qty]) => {
+    const p = state.products.find(p => p.id === id);
+    return sum + (p ? p.price * qty : 0);
+  }, 0);
+}
+
+// --- Checkout Screen ---
+function openCheckout() {
+  const count = Object.values(state.cart).reduce((s, v) => s + v, 0);
+  if (count === 0) return;
+  state.payment = null;
+  renderCheckout();
+  showScreen('checkout');
+}
+
+function renderCheckout() {
+  const items = Object.entries(state.cart)
+    .filter(([, qty]) => qty > 0)
+    .map(([id, qty]) => {
+      const p = state.products.find(p => p.id === id);
+      return { ...p, qty };
+    });
+
+  document.getElementById('checkout-items').innerHTML = items.map(item => `
+    <div class="checkout-item" data-id="${item.id}">
+      <div class="item-emoji">${item.emoji || '🛒'}</div>
+      <div class="item-info">
+        <div class="item-name">${item.name}</div>
+        <div class="item-price">¥${item.price.toLocaleString()} × <span class="qty-display">${item.qty}</span></div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" data-action="minus" data-id="${item.id}">－</button>
+        <span class="qty-val">${item.qty}</span>
+        <button class="qty-btn" data-action="plus" data-id="${item.id}">＋</button>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('checkout-items').querySelectorAll('.qty-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      if (action === 'plus') {
+        const stock = state.currentStock[id] ?? 0;
+        if ((state.cart[id] || 0) < stock) state.cart[id] = (state.cart[id] || 0) + 1;
+      } else {
+        state.cart[id] = Math.max(0, (state.cart[id] || 0) - 1);
+        if (state.cart[id] === 0) delete state.cart[id];
+      }
+      renderCheckout();
+      updateCartFooter();
+      updateRecordBtn();
+    });
+  });
+
+  // Payment buttons
+  document.querySelectorAll('.payment-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.payment === state.payment);
+    btn.onclick = () => {
+      state.payment = btn.dataset.payment;
+      document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      updateRecordBtn();
+    };
+  });
+
+  document.getElementById('checkout-total-amount').textContent = `¥${calcCartTotal().toLocaleString()}`;
+  updateRecordBtn();
+}
+
+function updateRecordBtn() {
+  const btn = document.getElementById('record-btn');
+  const hasItems = Object.values(state.cart).some(v => v > 0);
+  btn.disabled = !state.payment || !hasItems;
+}
+
+async function recordSale() {
+  if (!state.payment) return;
+  const items = Object.entries(state.cart)
+    .filter(([, qty]) => qty > 0)
+    .map(([id, qty]) => {
+      const p = state.products.find(p => p.id === id);
+      return { id, name: p.name, qty, price: p.price };
+    });
+  if (!items.length) return;
+
+  const now = new Date();
+  const tx = {
+    tx_id: `tx_${now.getTime()}`,
+    timestamp: now.toISOString(),
+    staff_id: state.currentStaff.id,
+    staff_name: state.currentStaff.name,
+    items,
+    total: calcCartTotal(),
+    payment: state.payment,
+    client_time: now.toISOString(),
+    status: 'pending',
+  };
+
+  // Deduct from local stock immediately
+  items.forEach(item => {
+    state.currentStock[item.id] = Math.max(0, (state.currentStock[item.id] || 0) - item.qty);
+  });
+
+  await saveTransaction(tx);
+  state.lastTx = tx;
+
+  // Try immediate sync
+  let synced = false;
+  try {
+    const res = await fetch(CONFIG.GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'sale', ...tx }),
+    });
+    const json = await res.json();
+    if (json.status === 'ok') {
+      const { markTransactionSynced } = await import('./db.js');
+      await markTransactionSynced(tx.tx_id);
+      synced = true;
+    }
+  } catch (_) {}
+
+  state.cart = {};
+  updateCartFooter();
+  renderComplete(synced);
+  showScreen('complete');
+}
+
+// --- Complete Screen ---
+function renderComplete(synced) {
+  const tx = state.lastTx;
+  const rows = tx.items.map(i =>
+    `<div class="row"><span>${i.name} ×${i.qty}</span><span class="val">¥${(i.price * i.qty).toLocaleString()}</span></div>`
+  ).join('');
+  document.getElementById('complete-rows').innerHTML = rows;
+  document.getElementById('complete-total').textContent = `¥${tx.total.toLocaleString()}`;
+  document.getElementById('complete-payment').textContent =
+    CONFIG.PAYMENT_TYPES[tx.payment]?.label || tx.payment;
+  document.getElementById('sync-status').className = `sync-status ${synced ? 'sync-ok' : 'sync-pending'}`;
+  document.getElementById('sync-status').textContent = synced ? '✓ 送信済み' : '⏳ オフライン保留中';
+}
+
+// --- Stock Tab ---
+function renderStockTab() {
+  const el = document.getElementById('stock-list');
+  el.innerHTML = state.products.map(p => {
+    const stock = state.currentStock[p.id] ?? 0;
+    let cls = 'stock-val';
+    if (stock <= 0) cls += ' out';
+    else if (stock <= CONFIG.LOW_STOCK_THRESHOLD) cls += ' low';
+    return `
+      <div class="stock-item">
+        <div class="emoji">${p.emoji || '🛒'}</div>
+        <div class="info">
+          <div class="sname">${p.name}</div>
+          <div class="sold">¥${p.price.toLocaleString()}</div>
+        </div>
+        <button class="qty-btn" data-id="${p.id}" data-action="minus">－</button>
+        <div class="${cls}" id="stock-${p.id}">${stock}</div>
+        <button class="qty-btn" data-id="${p.id}" data-action="plus">＋</button>
+      </div>`;
+  }).join('');
+
+  el.querySelectorAll('.qty-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const delta = btn.dataset.action === 'plus' ? 1 : -1;
+      state.currentStock[id] = Math.max(0, (state.currentStock[id] || 0) + delta);
+      await saveStockAdjustment({
+        product_id: id,
+        delta,
+        reason: 'adjust',
+        timestamp: new Date().toISOString(),
+      });
+      renderStockTab();
+      renderProducts();
+    });
+  });
+}
+
+// --- Screen Management ---
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+}
+
+// --- Pending Badge ---
+async function updatePendingBadge(count) {
+  if (count === undefined) {
+    const pending = await getPendingTransactions();
+    count = pending.length;
+  }
+  const badge = document.getElementById('pending-badge');
+  if (!badge) return;
+  badge.textContent = `未送信 ${count}`;
+  badge.classList.toggle('visible', count > 0);
+}
+
+// --- Toast ---
+let _toastTimer;
+function showToast(msg, duration = 2500) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+// --- Tab Switching ---
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-products').classList.toggle('hidden', tab !== 'products');
+      document.getElementById('tab-stock').classList.toggle('hidden', tab !== 'stock');
+      document.getElementById('cart-footer').classList.toggle('hidden', tab !== 'products');
+      if (tab === 'stock') renderStockTab();
+    });
+  });
+}
+
+// --- DOM Ready ---
+document.addEventListener('DOMContentLoaded', () => {
+  initTabs();
+
+  document.getElementById('cart-footer').addEventListener('click', openCheckout);
+  document.getElementById('back-btn').addEventListener('click', () => {
+    renderProducts();
+    showScreen('main');
+  });
+  document.getElementById('record-btn').addEventListener('click', recordSale);
+  document.getElementById('next-btn').addEventListener('click', () => {
+    renderProducts();
+    showScreen('main');
+  });
+  document.getElementById('change-staff-btn').addEventListener('click', () => {
+    localStorage.removeItem('currentStaff');
+    state.currentStaff = null;
+    state.cart = {};
+    renderStaffScreen();
+    showScreen('staff');
+  });
+
+  document.getElementById('staff-display').textContent = '';
+  init().then(() => {
+    if (state.currentStaff) {
+      document.getElementById('staff-display').textContent = state.currentStaff.name;
+    }
+  });
+});
+
+// Export for scanner
+export { showToast, addToCart, state };

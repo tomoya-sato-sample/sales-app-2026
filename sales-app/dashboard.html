@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>本部ダッシュボード — 模擬店レジ</title>
+  <link rel="stylesheet" href="./css/app.css">
+  <style>
+    body { background: #f0ede8; font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif; }
+    .db-header {
+      background: #1a1714;
+      color: #fff;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .db-header h1 { font-size: 20px; font-weight: 700; }
+    .db-header .meta { font-size: 13px; opacity: .7; }
+    .refresh-btn {
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .refresh-btn:hover { background: rgba(255,255,255,.25); }
+    .db-body { max-width: 1200px; margin: 0 auto; padding: 20px 16px; }
+    .kpi-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .kpi-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .kpi-card .label { font-size: 12px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .kpi-card .value { font-size: 28px; font-weight: 800; margin-top: 4px; color: #1a1714; }
+    .kpi-card .value.accent { color: #d4611b; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+    .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.07); margin-bottom: 16px; }
+    .card h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #1a1714; }
+    .chart-wrap { position: relative; height: 240px; }
+    .chart-wrap-tall { position: relative; height: 320px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 8px 6px; border-bottom: 2px solid #e8e2d9; color: #888; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    td { padding: 10px 6px; border-bottom: 1px solid #f0ede8; }
+    .alert-item { padding: 8px 0; border-bottom: 1px solid #f0ede8; font-size: 14px; }
+    .alert-item:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+
+<header class="db-header">
+  <div>
+    <h1>📊 本部ダッシュボード</h1>
+    <div class="meta">済々黌東京同窓会2026 — <span id="updated-at">読み込み中...</span></div>
+  </div>
+  <button id="refresh-btn" class="refresh-btn">手動更新</button>
+</header>
+
+<main class="db-body">
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="label">総売上</div>
+      <div class="value accent" id="kpi-amount">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">取引件数</div>
+      <div class="value" id="kpi-tx">—</div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="grid-2">
+    <div class="card">
+      <h2>🏆 商品別売上</h2>
+      <div class="chart-wrap-tall"><canvas id="chart-product"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>💳 決済方法別</h2>
+      <div class="chart-wrap"><canvas id="chart-payment"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Hourly Chart -->
+  <div class="card">
+    <h2>📈 時間帯別売上推移</h2>
+    <div class="chart-wrap"><canvas id="chart-hourly"></canvas></div>
+  </div>
+
+  <!-- Staff + Stock Alerts -->
+  <div class="grid-2">
+    <div class="card">
+      <h2>👤 スタッフ別</h2>
+      <table>
+        <thead><tr><th>名前</th><th>件数</th><th>売上</th></tr></thead>
+        <tbody id="staff-tbody"><tr><td colspan="3" style="color:#aaa">データなし</td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>⚠️ 在庫アラート</h2>
+      <div id="stock-alerts"><p style="color:#aaa;font-size:14px">読み込み中...</p></div>
+    </div>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script type="module" src="./js/dashboard.js"></script>
+</body>
+</html>
