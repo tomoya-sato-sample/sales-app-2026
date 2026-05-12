@@ -3,7 +3,6 @@ import {
   saveTransaction, getPendingTransactions,
   saveProducts, getProducts,
   saveStaff, getStaff,
-  saveStockAdjustment,
 } from './db.js';
 import { syncPending, startSync } from './sync.js';
 
@@ -16,7 +15,6 @@ let state = {
   cart: {},           // { productId: qty }
   payment: null,
   lastTx: null,
-  activeTab: 'products',
 };
 
 // --- Init ---
@@ -99,7 +97,6 @@ async function loadProducts() {
   state.products = products;
   initStock();
   renderProducts();
-  renderStockTab();
 }
 
 async function fetchProducts() {
@@ -212,6 +209,7 @@ function renderProducts() {
 
     return `<div class="${cls}" data-id="${p.id}" ${soldOut ? 'aria-disabled="true"' : ''}>
       ${badge}
+      ${qty > 0 ? `<button class="card-minus-btn" data-id="${p.id}">－</button>` : ''}
       ${productVisual(p.emoji, p.name)}
       <div class="pname">${p.name}</div>
       <div class="price">¥${p.price.toLocaleString()}</div>
@@ -225,6 +223,16 @@ function renderProducts() {
   });
   grid.querySelectorAll('.product-card:not(.sold-out):not(.group-card)').forEach(el => {
     el.addEventListener('click', () => addToCart(el.dataset.id));
+  });
+  grid.querySelectorAll('.card-minus-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      state.cart[id] = Math.max(0, (state.cart[id] || 0) - 1);
+      if (state.cart[id] === 0) delete state.cart[id];
+      renderProducts();
+      updateCartFooter();
+    });
   });
 }
 
@@ -326,7 +334,7 @@ function renderCheckout() {
 
   document.getElementById('checkout-items').innerHTML = items.map(item => `
     <div class="checkout-item" data-id="${item.id}">
-      <div class="item-emoji">${item.emoji || '🛒'}</div>
+      <div class="item-visual">${productVisual(item.emoji, item.name, 'item-img')}</div>
       <div class="item-info">
         <div class="item-name">${item.name}</div>
         <div class="item-price">¥${item.price.toLocaleString()} × <span class="qty-display">${item.qty}</span></div>
@@ -489,44 +497,6 @@ function renderComplete(synced) {
   document.getElementById('sync-status').textContent = synced ? '✓ 送信済み' : '⏳ オフライン保留中';
 }
 
-// --- Stock Tab ---
-function renderStockTab() {
-  const el = document.getElementById('stock-list');
-  el.innerHTML = state.products.map(p => {
-    const stock = state.currentStock[p.id] ?? 0;
-    let cls = 'stock-val';
-    if (stock <= 0) cls += ' out';
-    else if (stock <= CONFIG.LOW_STOCK_THRESHOLD) cls += ' low';
-    return `
-      <div class="stock-item">
-        <div class="emoji">${p.emoji || '🛒'}</div>
-        <div class="info">
-          <div class="sname">${p.name}</div>
-          <div class="sold">¥${p.price.toLocaleString()}</div>
-        </div>
-        <button class="qty-btn" data-id="${p.id}" data-action="minus">－</button>
-        <div class="${cls}" id="stock-${p.id}">${stock}</div>
-        <button class="qty-btn" data-id="${p.id}" data-action="plus">＋</button>
-      </div>`;
-  }).join('');
-
-  el.querySelectorAll('.qty-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.id;
-      const delta = btn.dataset.action === 'plus' ? 1 : -1;
-      state.currentStock[id] = Math.max(0, (state.currentStock[id] || 0) + delta);
-      await saveStockAdjustment({
-        product_id: id,
-        delta,
-        reason: 'adjust',
-        timestamp: new Date().toISOString(),
-      });
-      renderStockTab();
-      renderProducts();
-    });
-  });
-}
-
 // --- Screen Management ---
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -555,25 +525,8 @@ function showToast(msg, duration = 2500) {
   _toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
-// --- Tab Switching ---
-function initTabs() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('tab-products').classList.toggle('hidden', tab !== 'products');
-      document.getElementById('tab-stock').classList.toggle('hidden', tab !== 'stock');
-      document.getElementById('cart-footer').classList.toggle('hidden', tab !== 'products');
-      if (tab === 'stock') renderStockTab();
-    });
-  });
-}
-
 // --- DOM Ready ---
 document.addEventListener('DOMContentLoaded', () => {
-  initTabs();
-
   document.getElementById('cart-footer').addEventListener('click', openCheckout);
   document.getElementById('back-btn').addEventListener('click', () => {
     renderProducts();
