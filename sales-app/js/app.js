@@ -129,13 +129,55 @@ function calcSoldStock() {
 }
 
 // --- Product Grid ---
+function ecobagSwatchColor(name) {
+  if (name.includes('赤')) return '#c0392b';
+  if (name.includes('カーキ')) return '#7d7a3d';
+  return '#2c2c2c';
+}
+
 function renderProducts() {
   const grid = document.getElementById('product-grid');
   if (!state.products.length) {
     grid.innerHTML = '<p class="loading">商品を読み込み中...</p>';
     return;
   }
-  grid.innerHTML = state.products.map(p => {
+
+  const ecobags = state.products.filter(p => p.category === 'ecobag');
+  const others  = state.products.filter(p => p.category !== 'ecobag');
+
+  let html = '';
+
+  // エコバッグ グループカード
+  if (ecobags.length) {
+    const totalInCart = ecobags.reduce((s, p) => s + (state.cart[p.id] || 0), 0);
+    const anyAvailable = ecobags.some(p => (state.currentStock[p.id] ?? 0) > 0);
+    const allSoldOut = ecobags.every(p => (state.currentStock[p.id] ?? 0) <= 0);
+
+    let cls = 'product-card group-card';
+    if (allSoldOut) cls += ' sold-out';
+    else if (totalInCart > 0) cls += ' in-cart';
+
+    const badge = totalInCart > 0
+      ? `<span class="product-badge badge-qty">×${totalInCart}</span>`
+      : allSoldOut ? '<span class="product-badge badge-sold">SOLD OUT</span>' : '';
+
+    const swatches = ecobags.map(p =>
+      `<span class="swatch" style="background:${ecobagSwatchColor(p.name)}" title="${p.name}"></span>`
+    ).join('');
+
+    html += `<div class="${cls}" id="ecobag-group-card" ${allSoldOut ? 'aria-disabled="true"' : ''}>
+      ${badge}
+      <div class="emoji">👜</div>
+      <div class="group-info">
+        <div class="pname">エコバッグ</div>
+        <div class="swatches">${swatches}</div>
+        <div class="group-sub">${ecobags.length}種類 ¥${ecobags[0].price.toLocaleString()}</div>
+      </div>
+    </div>`;
+  }
+
+  // その他の商品
+  html += others.map(p => {
     const stock = state.currentStock[p.id] ?? 0;
     const qty = state.cart[p.id] || 0;
     const soldOut = stock <= 0;
@@ -150,17 +192,70 @@ function renderProducts() {
     else if (qty > 0) badge = `<span class="product-badge badge-qty">×${qty}</span>`;
     else if (lowStock) badge = '<span class="product-badge badge-low">残少</span>';
 
-    return `
-      <div class="${cls}" data-id="${p.id}" ${soldOut ? 'aria-disabled="true"' : ''}>
-        ${badge}
-        <div class="emoji">${p.emoji || '🛒'}</div>
-        <div class="pname">${p.name}</div>
-        <div class="price">¥${p.price.toLocaleString()}</div>
-      </div>`;
+    return `<div class="${cls}" data-id="${p.id}" ${soldOut ? 'aria-disabled="true"' : ''}>
+      ${badge}
+      <div class="emoji">${p.emoji || '🛒'}</div>
+      <div class="pname">${p.name}</div>
+      <div class="price">¥${p.price.toLocaleString()}</div>
+    </div>`;
   }).join('');
 
-  grid.querySelectorAll('.product-card:not(.sold-out)').forEach(el => {
+  grid.innerHTML = html;
+
+  const groupCard = document.getElementById('ecobag-group-card');
+  if (groupCard && !groupCard.classList.contains('sold-out')) {
+    groupCard.addEventListener('click', openEcobagModal);
+  }
+
+  grid.querySelectorAll('.product-card:not(.sold-out):not(.group-card)').forEach(el => {
     el.addEventListener('click', () => addToCart(el.dataset.id));
+  });
+}
+
+// --- Ecobag Modal ---
+function openEcobagModal() {
+  renderEcobagModal();
+  document.getElementById('ecobag-modal').classList.remove('hidden');
+}
+
+function closeEcobagModal() {
+  document.getElementById('ecobag-modal').classList.add('hidden');
+}
+
+function renderEcobagModal() {
+  const ecobags = state.products.filter(p => p.category === 'ecobag');
+  const grid = document.getElementById('ecobag-variant-grid');
+
+  grid.innerHTML = ecobags.map(p => {
+    const stock = state.currentStock[p.id] ?? 0;
+    const qty = state.cart[p.id] || 0;
+    const soldOut = stock <= 0;
+    const lowStock = !soldOut && stock <= CONFIG.LOW_STOCK_THRESHOLD;
+    const label = p.name.replace('エコバッグ', '').trim();
+
+    let cls = 'variant-card';
+    if (soldOut) cls += ' sold-out';
+    else if (qty > 0) cls += ' in-cart';
+
+    return `<div class="${cls}" data-id="${p.id}">
+      <div class="swatch-lg" style="background:${ecobagSwatchColor(p.name)}"></div>
+      <div class="variant-label">${label}</div>
+      <div class="variant-stock ${lowStock ? 'low' : soldOut ? 'out' : ''}">
+        ${soldOut ? 'SOLD OUT' : `残 ${stock}`}
+      </div>
+      ${qty > 0 ? `<div class="variant-qty-badge">カートに ${qty}個</div>` : ''}
+      <button class="variant-add-btn" data-id="${p.id}" ${soldOut ? 'disabled' : ''}>
+        ${soldOut ? '−' : '＋ カートへ'}
+      </button>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.variant-add-btn:not(:disabled)').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      addToCart(btn.dataset.id);
+      renderEcobagModal();
+    });
   });
 }
 
@@ -429,6 +524,11 @@ document.addEventListener('DOMContentLoaded', () => {
     state.cart = {};
     renderStaffScreen();
     showScreen('staff');
+  });
+
+  document.getElementById('ecobag-modal-close').addEventListener('click', closeEcobagModal);
+  document.getElementById('ecobag-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('ecobag-modal')) closeEcobagModal();
   });
 
   document.getElementById('staff-display').textContent = '';
