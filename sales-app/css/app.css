@@ -153,7 +153,13 @@ html, body {
 .product-card.in-cart { border-color: var(--accent); background: #fff8f3; }
 .product-card.sold-out { background: var(--sold-bg); cursor: not-allowed; }
 .product-card.low-stock { background: var(--low-stock); }
-.product-card .emoji { font-size: 36px; line-height: 1; }
+.product-card .product-emoji { font-size: 36px; line-height: 1; }
+.product-card .product-img {
+  width: 100%;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 6px;
+}
 .product-card .pname { font-size: 14px; font-weight: 700; margin-top: 6px; }
 .product-card .price { font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 2px; }
 .product-badge {
@@ -382,7 +388,14 @@ html, body {
   padding: 16px;
   text-align: left;
 }
-.group-card .emoji { font-size: 40px; flex-shrink: 0; }
+.group-card .product-emoji { font-size: 40px; flex-shrink: 0; }
+.group-card .product-img.group-img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
 .group-card .pname { font-size: 18px; font-weight: 800; }
 .group-card .group-sub { font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 2px; }
 .group-card .group-info { flex: 1; }

@@ -40,9 +40,6 @@
 
   <!-- Tab: Products -->
   <div id="tab-products" class="main-scroll">
-    <button id="scan-btn" class="scan-btn">
-      <span>📷</span> バーコードスキャン
-    </button>
     <div id="product-grid" class="product-grid">
       <p class="loading">商品を読み込み中...</p>
     </div>
@@ -129,22 +126,11 @@
   </div>
 </div>
 
-<!-- Scanner Modal -->
-<div id="scanner-modal" class="scanner-modal hidden">
-  <p style="color:#fff;font-size:15px">バーコードをカメラに向けてください</p>
-  <video id="scanner-video" playsinline></video>
-  <button id="scanner-close" class="scanner-close">キャンセル</button>
-</div>
-
 <!-- Toast -->
 <div id="toast" class="toast"></div>
 
 <script type="module">
   import './js/app.js';
-  import { startScanner, stopScanner } from './js/scanner.js';
-
-  document.getElementById('scan-btn').addEventListener('click', startScanner);
-  document.getElementById('scanner-close').addEventListener('click', stopScanner);
 </script>
 </body>
 </html>

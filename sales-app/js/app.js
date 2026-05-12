@@ -128,6 +128,14 @@ function calcSoldStock() {
   return sold;
 }
 
+// --- Product Visual Helper ---
+function productVisual(emoji, name, cls = '') {
+  if (emoji && emoji.startsWith('http')) {
+    return `<img src="${emoji}" class="product-img${cls ? ' ' + cls : ''}" alt="${name}" loading="lazy">`;
+  }
+  return `<div class="product-emoji">${emoji || '🛒'}</div>`;
+}
+
 // --- Group Config ---
 const GROUP_CONFIGS = {
   ecobag:   { name: 'エコバッグ', emoji: '👜' },
@@ -174,9 +182,10 @@ function renderProducts() {
       `<span class="swatch" style="background:${variantSwatchColor(p.name)};border-color:${variantSwatchBorder(p.name)}" title="${p.name}"></span>`
     ).join('');
 
+    const groupImage = items[0].emoji || '';
     html += `<div class="product-card group-card${allSoldOut ? ' sold-out' : totalInCart > 0 ? ' in-cart' : ''}" data-group="${category}" ${allSoldOut ? 'aria-disabled="true"' : ''}>
       ${badge}
-      <div class="emoji">${config.emoji}</div>
+      ${productVisual(groupImage, config.name, 'group-img')}
       <div class="group-info">
         <div class="pname">${config.name}</div>
         <div class="swatches">${swatches}</div>
@@ -203,7 +212,7 @@ function renderProducts() {
 
     return `<div class="${cls}" data-id="${p.id}" ${soldOut ? 'aria-disabled="true"' : ''}>
       ${badge}
-      <div class="emoji">${p.emoji || '🛒'}</div>
+      ${productVisual(p.emoji, p.name)}
       <div class="pname">${p.name}</div>
       <div class="price">¥${p.price.toLocaleString()}</div>
     </div>`;
