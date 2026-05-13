@@ -18,9 +18,10 @@ function doPost(e) {
 function doGet(e) {
   try {
     const action = e.parameter.action;
-    if (action === 'products') return getProducts();
-    if (action === 'staff') return getStaff();
-    if (action === 'summary') return getSummary();
+    if (action === 'products')   return getProducts();
+    if (action === 'staff')      return getStaff();
+    if (action === 'summary')    return getSummary();
+    if (action === 'reset_test') return resetTestData(e.parameter.secret);
     return jsonResponse({ status: 'error', message: 'Unknown action' });
   } catch (err) {
     return jsonResponse({ status: 'error', message: err.message });
@@ -207,6 +208,46 @@ function getSummary() {
       current_stock: currentStock,
       updated_at: new Date().toISOString()
     }
+  });
+}
+
+// ---------------------------------------------------------------
+// reset_test: テスト前の断面初期化
+//   secret はスクリプトプロパティ RESET_SECRET で管理
+//   products シートは変更せず、sales_log / stock_log だけクリア
+//   ※ GASエディタ > プロジェクトの設定 > スクリプトプロパティ に
+//     キー: RESET_SECRET  値: <任意の文字列> を登録してください
+// ---------------------------------------------------------------
+function resetTestData(secret) {
+  const props = PropertiesService.getScriptProperties();
+  const validSecret = props.getProperty('RESET_SECRET');
+  if (!validSecret || secret !== validSecret) {
+    return jsonResponse({ status: 'error', message: 'Unauthorized' });
+  }
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  // sales_log: ヘッダ行(1行目)を残して全削除
+  const salesSheet = ss.getSheetByName('sales_log');
+  const salesLastRow = salesSheet.getLastRow();
+  const clearedSales = Math.max(0, salesLastRow - 1);
+  if (salesLastRow > 1) {
+    salesSheet.deleteRows(2, salesLastRow - 1);
+  }
+
+  // stock_log: ヘッダ行(1行目)を残して全削除
+  const stockSheet = ss.getSheetByName('stock_log');
+  const stockLastRow = stockSheet.getLastRow();
+  const clearedStock = Math.max(0, stockLastRow - 1);
+  if (stockLastRow > 1) {
+    stockSheet.deleteRows(2, stockLastRow - 1);
+  }
+
+  return jsonResponse({
+    status: 'ok',
+    cleared_sales: clearedSales,
+    cleared_stock: clearedStock,
+    reset_at: new Date().toISOString(),
   });
 }
 

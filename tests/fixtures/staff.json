@@ -1,0 +1,7 @@
+{
+  "action": "staff",
+  "data": [
+    { "id": "staff_01", "name": "田中 太郎", "area": "受付" },
+    { "id": "staff_02", "name": "山田 花子", "area": "会計" }
+  ]
+}

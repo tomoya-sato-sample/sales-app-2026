@@ -1,0 +1,68 @@
+{
+  "action": "products",
+  "data": [
+    {
+      "id": "ecobag_red",
+      "name": "エコバッグ 赤",
+      "price": 1000,
+      "barcode": "",
+      "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/ecobag_red.webp",
+      "init_stock": 20,
+      "category": "ecobag"
+    },
+    {
+      "id": "ecobag_khaki",
+      "name": "エコバッグ カーキ",
+      "price": 1000,
+      "barcode": "",
+      "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/ecobag_khaki.webp",
+      "init_stock": 20,
+      "category": "ecobag"
+    },
+    {
+      "id": "ecobag_navy",
+      "name": "エコバッグ 青",
+      "price": 1000,
+      "barcode": "",
+      "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/ecobag_navy.webp",
+      "init_stock": 20,
+      "category": "ecobag"
+    },
+    {
+      "id": "shoehorn_gold",
+      "name": "靴ベラ 金",
+      "price": 500,
+      "barcode": "",
+      "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/kutsubera.webp",
+      "init_stock": 30,
+      "category": "shoehorn"
+    },
+    {
+      "id": "shoehorn_sold",
+      "name": "靴ベラ 銀",
+      "price": 500,
+      "barcode": "",
+      "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/kutsubera.webp",
+      "init_stock": 0,
+      "category": "shoehorn"
+    },
+    {
+      "id": "chopstick_001",
+      "name": "架箸",
+      "price": 800,
+      "barcode": "",
+      "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/chopstick.webp",
+      "init_stock": 50,
+      "category": "other"
+    },
+    {
+      "id": "item_low",
+      "name": "テスト低在庫品",
+      "price": 300,
+      "barcode": "",
+      "emoji": "🎁",
+      "init_stock": 3,
+      "category": "other"
+    }
+  ]
+}
