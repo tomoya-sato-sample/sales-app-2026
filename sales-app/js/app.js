@@ -333,7 +333,6 @@ function calcCartTotal() {
 function openCheckout() {
   const count = Object.values(state.cart).reduce((s, v) => s + v, 0);
   if (count === 0) return;
-  state.payment = null;
   renderCheckout();
   showScreen('checkout');
 }
@@ -498,6 +497,7 @@ async function recordSale() {
   } catch (_) {}
 
   state.cart = {};
+  state.payment = null;
   updateCartFooter();
   renderComplete(synced);
   showScreen('complete');
