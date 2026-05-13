@@ -21,7 +21,8 @@ function doGet(e) {
     if (action === 'products')   return getProducts();
     if (action === 'staff')      return getStaff();
     if (action === 'summary')    return getSummary();
-    if (action === 'reset_test') return resetTestData(e.parameter.secret);
+    if (action === 'reset_test')    return resetTestData(e.parameter.secret);
+    if (action === 'seed_products') return seedProducts(e.parameter.secret);
     return jsonResponse({ status: 'error', message: 'Unknown action' });
   } catch (err) {
     return jsonResponse({ status: 'error', message: err.message });
@@ -250,6 +251,35 @@ function resetTestData(secret) {
     cleared_stock: clearedStock,
     reset_at: new Date().toISOString(),
   });
+}
+
+// ---------------------------------------------------------------
+// seed_products: productsシートをテストデータで初期化
+//   secret はスクリプトプロパティ RESET_SECRET で管理（reset_testと共用）
+// ---------------------------------------------------------------
+function seedProducts(secret) {
+  const props = PropertiesService.getScriptProperties();
+  const validSecret = props.getProperty('RESET_SECRET');
+  if (!validSecret || secret !== validSecret) {
+    return jsonResponse({ status: 'error', message: 'Unauthorized' });
+  }
+
+  const SEED = [
+    ['id',           'name',           'price', 'barcode', 'emoji',                                                               'init_stock', 'category'],
+    ['ecobag_red',   'エコバッグ 赤',   1000,    '',        'https://ssk2026.bam-o-rama.com/buppan/img/ecobag_red.webp',   20,           'ecobag'],
+    ['ecobag_khaki', 'エコバッグ カーキ',1000,   '',        'https://ssk2026.bam-o-rama.com/buppan/img/ecobag_khaki.webp', 20,           'ecobag'],
+    ['ecobag_navy',  'エコバッグ 青',   1000,    '',        'https://ssk2026.bam-o-rama.com/buppan/img/ecobag_navy.webp',  20,           'ecobag'],
+    ['shoehorn_gold','靴ベラ 金',        500,    '',        'https://ssk2026.bam-o-rama.com/buppan/img/kutsubera.webp',    30,           'shoehorn'],
+    ['shoehorn_sold','靴ベラ 銀',        500,    '',        'https://ssk2026.bam-o-rama.com/buppan/img/kutsubera.webp',    0,            'shoehorn'],
+    ['chopstick_001','架箸',             800,    '',        'https://ssk2026.bam-o-rama.com/buppan/img/chopstick.webp',   50,           'other'],
+  ];
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName('products');
+  sheet.clearContents();
+  sheet.getRange(1, 1, SEED.length, SEED[0].length).setValues(SEED);
+
+  return jsonResponse({ status: 'ok', seeded: SEED.length - 1, seeded_at: new Date().toISOString() });
 }
 
 function jsonResponse(obj) {

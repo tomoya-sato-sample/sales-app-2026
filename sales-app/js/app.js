@@ -397,6 +397,12 @@ function renderCheckout() {
     };
   });
 
+  // 現金セクションをリセット
+  document.getElementById('cash-received').value = '';
+  document.getElementById('cash-section').classList.add('hidden');
+  document.getElementById('change-row').classList.add('hidden');
+  document.getElementById('change-short').classList.add('hidden');
+
   // 現金受取入力
   const cashInput = document.getElementById('cash-received');
   cashInput.oninput = () => updateChange();
