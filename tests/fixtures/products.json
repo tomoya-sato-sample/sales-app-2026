@@ -8,7 +8,8 @@
       "barcode": "",
       "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/ecobag_red.webp",
       "init_stock": 20,
-      "category": "ecobag"
+      "category": "ecobag",
+      "sort_order": 1
     },
     {
       "id": "ecobag_khaki",
@@ -17,7 +18,8 @@
       "barcode": "",
       "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/ecobag_khaki.webp",
       "init_stock": 20,
-      "category": "ecobag"
+      "category": "ecobag",
+      "sort_order": 2
     },
     {
       "id": "ecobag_navy",
@@ -26,7 +28,8 @@
       "barcode": "",
       "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/ecobag_navy.webp",
       "init_stock": 20,
-      "category": "ecobag"
+      "category": "ecobag",
+      "sort_order": 3
     },
     {
       "id": "shoehorn_gold",
@@ -35,7 +38,8 @@
       "barcode": "",
       "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/kutsubera.webp",
       "init_stock": 30,
-      "category": "shoehorn"
+      "category": "shoehorn",
+      "sort_order": 4
     },
     {
       "id": "shoehorn_sold",
@@ -44,7 +48,8 @@
       "barcode": "",
       "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/kutsubera.webp",
       "init_stock": 0,
-      "category": "shoehorn"
+      "category": "shoehorn",
+      "sort_order": 5
     },
     {
       "id": "chopstick_001",
@@ -53,7 +58,8 @@
       "barcode": "",
       "emoji": "https://ssk2026.bam-o-rama.com/buppan/img/chopstick.webp",
       "init_stock": 50,
-      "category": "other"
+      "category": "other",
+      "sort_order": 6
     },
     {
       "id": "item_low",
@@ -62,7 +68,8 @@
       "barcode": "",
       "emoji": "🎁",
       "init_stock": 3,
-      "category": "other"
+      "category": "other",
+      "sort_order": 7
     }
   ]
 }

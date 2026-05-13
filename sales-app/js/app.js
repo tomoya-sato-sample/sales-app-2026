@@ -159,7 +159,9 @@ function renderProducts() {
   }
 
   const groupCategories = new Set(Object.keys(GROUP_CONFIGS));
-  const others = state.products.filter(p => !groupCategories.has(p.category));
+  const others = state.products
+    .filter(p => !groupCategories.has(p.category))
+    .sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
 
   let html = '';
 
@@ -398,7 +400,7 @@ function renderCheckout() {
   // 現金受取入力
   const cashInput = document.getElementById('cash-received');
   cashInput.oninput = () => updateChange();
-  document.querySelectorAll('.bill-btn').forEach(btn => {
+  document.querySelectorAll('.bill-btn, .coin-btn').forEach(btn => {
     btn.onclick = () => {
       cashInput.value = (parseInt(cashInput.value, 10) || 0) + parseInt(btn.dataset.amount, 10);
       updateChange();

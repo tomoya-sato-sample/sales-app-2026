@@ -108,7 +108,8 @@ function getProducts() {
       barcode: r[3],
       emoji: r[4],
       init_stock: r[5],
-      category: r[6]
+      category: r[6],
+      sort_order: i
     });
   }
   return jsonResponse({ action: 'products', data: products });

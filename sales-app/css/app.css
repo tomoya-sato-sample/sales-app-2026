@@ -288,6 +288,20 @@ html, body {
   border: 1px solid var(--border);
 }
 .cash-label { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; }
+.quick-coins {
+  display: flex; gap: 8px; margin-bottom: 8px;
+}
+.coin-btn {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+}
+.coin-btn:active { background: var(--border); }
 .quick-bills {
   display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
 }
