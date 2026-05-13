@@ -386,8 +386,9 @@ html, body {
   cursor: pointer;
   box-shadow: var(--shadow-lg);
 }
-.record-btn:disabled { opacity: .4; cursor: not-allowed; }
-.record-btn:active:not(:disabled) { opacity: .85; }
+.record-btn:disabled { opacity: .6; cursor: not-allowed; }
+.record-btn[data-loading] { opacity: .8; cursor: wait; }
+.record-btn:active:not(:disabled):not([data-loading]) { opacity: .85; }
 
 .checkout-header {
   display: flex;

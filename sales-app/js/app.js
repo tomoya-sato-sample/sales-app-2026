@@ -453,13 +453,19 @@ function updateRecordBtn() {
 
 async function recordSale() {
   if (!state.payment) return;
+  const btn = document.getElementById('record-btn');
+  if (btn.dataset.loading) return;
+  btn.dataset.loading = '1';
+  btn.disabled = true;
+  btn.textContent = '送信中...';
+
   const items = Object.entries(state.cart)
     .filter(([, qty]) => qty > 0)
     .map(([id, qty]) => {
       const p = state.products.find(p => p.id === id);
       return { id, name: p.name, qty, price: p.price };
     });
-  if (!items.length) return;
+  if (!items.length) { delete btn.dataset.loading; btn.disabled = false; btn.textContent = '記録する'; return; }
 
   const now = new Date();
   const tx = {
@@ -497,6 +503,9 @@ async function recordSale() {
       synced = true;
     }
   } catch (_) {}
+
+  delete btn.dataset.loading;
+  btn.textContent = '記録する';
 
   state.cart = {};
   state.payment = null;
