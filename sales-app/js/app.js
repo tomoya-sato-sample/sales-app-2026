@@ -401,10 +401,16 @@ function renderCheckout() {
   cashInput.oninput = () => updateChange();
   document.querySelectorAll('.bill-btn').forEach(btn => {
     btn.onclick = () => {
-      cashInput.value = btn.dataset.amount;
+      cashInput.value = (parseInt(cashInput.value, 10) || 0) + parseInt(btn.dataset.amount, 10);
       updateChange();
     };
   });
+  document.getElementById('cash-clear-btn').onclick = () => {
+    cashInput.value = '';
+    document.getElementById('change-row').classList.add('hidden');
+    document.getElementById('change-short').classList.add('hidden');
+    updateRecordBtn();
+  };
 
   document.getElementById('checkout-total-amount').textContent = `¥${calcCartTotal().toLocaleString()}`;
   updateRecordBtn();

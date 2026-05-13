@@ -113,6 +113,42 @@ test.describe('C: 会計確認', () => {
     await expect(page.locator('#change-amount')).toContainText('¥4,200');
   });
 
+  test('C-11b: 紙幣ボタンを複数回押すと加算される（¥1,000 × 2 = ¥2,000）', async ({ page }) => {
+    await gotoCheckout(page);
+    await page.locator('[data-payment="cash"]').click();
+    await page.locator('.bill-btn[data-amount="1000"]').click();
+    await page.locator('.bill-btn[data-amount="1000"]').click();
+    await expect(page.locator('#cash-received')).toHaveValue('2000');
+    await expect(page.locator('#change-amount')).toContainText('¥1,200');
+  });
+
+  test('C-11c: 異なる紙幣ボタンを組み合わせると加算される（¥1,000 + ¥5,000 = ¥6,000）', async ({ page }) => {
+    await gotoCheckout(page);
+    await page.locator('[data-payment="cash"]').click();
+    await page.locator('.bill-btn[data-amount="1000"]').click();
+    await page.locator('.bill-btn[data-amount="5000"]').click();
+    await expect(page.locator('#cash-received')).toHaveValue('6000');
+    await expect(page.locator('#change-amount')).toContainText('¥5,200');
+  });
+
+  test('C-11d: クリアボタンで金額欄がリセットされる', async ({ page }) => {
+    await gotoCheckout(page);
+    await page.locator('[data-payment="cash"]').click();
+    await page.locator('.bill-btn[data-amount="5000"]').click();
+    await expect(page.locator('#cash-received')).toHaveValue('5000');
+    await page.locator('#cash-clear-btn').click();
+    await expect(page.locator('#cash-received')).toHaveValue('');
+    await expect(page.locator('#change-row')).toBeHidden();
+    await expect(page.locator('#change-short')).toBeHidden();
+    await expect(page.locator('#record-btn')).toBeDisabled();
+  });
+
+  test('C-11e: ¥50,000 ボタンが存在しない', async ({ page }) => {
+    await gotoCheckout(page);
+    await page.locator('[data-payment="cash"]').click();
+    await expect(page.locator('.bill-btn[data-amount="50000"]')).toHaveCount(0);
+  });
+
   test('C-12: 「←」ボタンで画面 B に戻る（カートは維持）', async ({ page }) => {
     await gotoCheckout(page);
     await page.locator('#back-btn').click();

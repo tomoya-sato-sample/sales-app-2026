@@ -1,7 +1,7 @@
 {
-  "name": "模擬店レジ",
+  "name": "物販レジ",
   "short_name": "レジ",
-  "description": "済々黌東京同窓会2026 模擬店販売管理",
+  "description": "済々黌東京同窓会2026 物販販売管理",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
