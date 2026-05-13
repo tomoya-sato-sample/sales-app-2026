@@ -157,6 +157,23 @@ test.describe('C: 会計確認', () => {
     await expect(page.locator('#cart-footer')).not.toHaveClass(/empty/);
     await expect(page.locator('#cart-total')).toContainText('¥800');
   });
+
+  test('C-12b: 「←」で戻り再度会計画面を開いても決済方法の選択が維持される', async ({ page }) => {
+    await gotoCheckout(page);
+    await page.locator('[data-payment="qr"]').click();
+    await expect(page.locator('[data-payment="qr"]')).toHaveClass(/selected/);
+
+    // 戻る
+    await page.locator('#back-btn').click();
+    await expect(page.locator('#screen-main')).toBeVisible();
+
+    // 再度会計へ
+    await page.locator('#cart-footer').click();
+    await page.waitForSelector('#screen-checkout.active');
+    // QR が選択済みのままであること
+    await expect(page.locator('[data-payment="qr"]')).toHaveClass(/selected/);
+    await expect(page.locator('#record-btn')).toBeEnabled();
+  });
 });
 
 test.describe('D: 完了画面', () => {
