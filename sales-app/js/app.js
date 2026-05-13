@@ -488,30 +488,36 @@ async function recordSale() {
   await saveTransaction(tx);
   state.lastTx = tx;
 
-  // Try immediate sync
-  let synced = false;
-  try {
-    const res = await fetch(CONFIG.GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'sale', ...tx }),
-    });
-    const json = await res.json();
-    if (json.status === 'ok') {
-      const { markTransactionSynced } = await import('./db.js');
-      await markTransactionSynced(tx.tx_id);
-      synced = true;
-    }
-  } catch (_) {}
-
+  // 即座に完了画面へ遷移（送信はバックグラウンドで継続）
   delete btn.dataset.loading;
   btn.textContent = '記録する';
-
   state.cart = {};
   state.payment = null;
   updateCartFooter();
-  renderComplete(synced);
+  renderComplete(false);
   showScreen('complete');
+
+  // バックグラウンドで GAS 送信
+  (async () => {
+    try {
+      const res = await fetch(CONFIG.GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'sale', ...tx }),
+      });
+      const json = await res.json();
+      if (json.status === 'ok') {
+        const { markTransactionSynced } = await import('./db.js');
+        await markTransactionSynced(tx.tx_id);
+        // 完了画面が表示中なら同期ステータスを更新
+        const syncEl = document.getElementById('sync-status');
+        if (syncEl) {
+          syncEl.className = 'sync-status sync-ok';
+          syncEl.textContent = '✓ 送信済み';
+        }
+      }
+    } catch (_) {}
+  })();
 }
 
 // --- Complete Screen ---
