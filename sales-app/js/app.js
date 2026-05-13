@@ -265,24 +265,38 @@ function renderVariantModal(category) {
     const lowStock = !soldOut && stock <= CONFIG.LOW_STOCK_THRESHOLD;
     const label = p.name.replace(config.name, '').trim();
 
-    return `<div class="variant-card${soldOut ? ' sold-out' : qty > 0 ? ' in-cart' : ''}" data-id="${p.id}">
+    let badge = '';
+    if (soldOut)   badge = '<span class="product-badge badge-sold">SOLD OUT</span>';
+    else if (qty > 0) badge = `<span class="product-badge badge-qty">×${qty}</span>`;
+
+    return `<div class="variant-card${soldOut ? ' sold-out' : qty > 0 ? ' in-cart' : ''}" data-id="${p.id}" ${soldOut ? 'aria-disabled="true"' : ''}>
+      ${badge}
+      ${qty > 0 ? `<button class="variant-minus-btn" data-id="${p.id}">－</button>` : ''}
       <div class="swatch-lg" style="background:${variantSwatchColor(p.name)};border-color:${variantSwatchBorder(p.name)}"></div>
       <div class="variant-label">${label}</div>
       <div class="variant-stock ${lowStock ? 'low' : soldOut ? 'out' : ''}">
         ${soldOut ? 'SOLD OUT' : `残 ${stock}`}
       </div>
-      ${qty > 0 ? `<div class="variant-qty-badge">カートに ${qty}個</div>` : ''}
-      <button class="variant-add-btn" data-id="${p.id}" ${soldOut ? 'disabled' : ''}>
-        ${soldOut ? '−' : '＋ カートへ'}
-      </button>
     </div>`;
   }).join('');
 
-  grid.querySelectorAll('.variant-add-btn:not(:disabled)').forEach(btn => {
+  // カードタップで追加
+  grid.querySelectorAll('.variant-card:not(.sold-out)').forEach(el => {
+    el.addEventListener('click', () => {
+      addToCart(el.dataset.id);
+      renderVariantModal(category); // モーダル内バッジを即更新
+    });
+  });
+  // マイナスボタンで減算
+  grid.querySelectorAll('.variant-minus-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      addToCart(btn.dataset.id);
+      const id = btn.dataset.id;
+      state.cart[id] = Math.max(0, (state.cart[id] || 0) - 1);
+      if (state.cart[id] === 0) delete state.cart[id];
       renderVariantModal(category);
+      renderProducts();
+      updateCartFooter();
     });
   });
 }

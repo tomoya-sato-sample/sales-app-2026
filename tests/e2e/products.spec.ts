@@ -157,12 +157,45 @@ test.describe('V: バリアントモーダル', () => {
     await expect(soldCard.locator('.variant-stock')).toContainText('SOLD OUT');
   });
 
-  test('V-04: 「＋ カートへ」タップで選択され、カートに数量が表示される', async ({ page }) => {
+  test('V-04: バリアントカードをタップするとカートに追加され右上にバッジが表示される', async ({ page }) => {
     await page.locator('.group-card[data-group="ecobag"]').click();
-    // 最初の追加ボタン（赤）
-    await page.locator('#variant-grid-items .variant-add-btn').first().click();
-    await expect(page.locator('#variant-grid-items .variant-qty-badge').first())
-      .toContainText('カートに 1個');
+    // sold-out でない最初のカード（赤）をタップ
+    const firstCard = page.locator('#variant-grid-items .variant-card:not(.sold-out)').first();
+    await firstCard.click();
+    await expect(firstCard.locator('.badge-qty')).toContainText('×1');
+  });
+
+  test('V-08: カートに入れたバリアントにマイナスボタンが表示される', async ({ page }) => {
+    await page.locator('.group-card[data-group="ecobag"]').click();
+    const firstCard = page.locator('#variant-grid-items .variant-card:not(.sold-out)').first();
+    await expect(firstCard.locator('.variant-minus-btn')).toBeHidden();
+    await firstCard.click();
+    await expect(firstCard.locator('.variant-minus-btn')).toBeVisible();
+  });
+
+  test('V-09: マイナスボタンで数量が減り、0 になるとバッジとボタンが消える', async ({ page }) => {
+    await page.locator('.group-card[data-group="ecobag"]').click();
+    const firstCard = page.locator('#variant-grid-items .variant-card:not(.sold-out)').first();
+    // 2個追加
+    await firstCard.click();
+    await firstCard.click();
+    await expect(firstCard.locator('.badge-qty')).toContainText('×2');
+    // 1個減らす
+    await firstCard.locator('.variant-minus-btn').click();
+    await expect(firstCard.locator('.badge-qty')).toContainText('×1');
+    // 0 にする → バッジとボタン消える
+    await firstCard.locator('.variant-minus-btn').click();
+    await expect(firstCard.locator('.badge-qty')).toBeHidden();
+    await expect(firstCard.locator('.variant-minus-btn')).toBeHidden();
+  });
+
+  test('V-10: マイナスタップ時にカード追加イベントは発火しない', async ({ page }) => {
+    await page.locator('.group-card[data-group="ecobag"]').click();
+    const firstCard = page.locator('#variant-grid-items .variant-card:not(.sold-out)').first();
+    await firstCard.click(); // qty=1
+    await firstCard.locator('.variant-minus-btn').click(); // qty=0 → 削除
+    // stopPropagation が効いていれば qty は 0 のまま（カードクリックで 1 に増えない）
+    await expect(firstCard.locator('.badge-qty')).toBeHidden();
   });
 
   test('V-05: ✕ ボタンでモーダルが閉じる', async ({ page }) => {
@@ -184,7 +217,11 @@ test.describe('V: バリアントモーダル', () => {
     await page.locator('.group-card[data-group="shoehorn"]').click();
     await expect(page.locator('#variant-modal')).toBeVisible();
     await expect(page.locator('#variant-modal-title')).toContainText('靴ベラ');
-    const addBtns = page.locator('#variant-grid-items .variant-add-btn:not(:disabled)');
-    await expect(addBtns).toHaveCount(1); // 金のみ（銀は sold-out で disabled）
+    // タップ可能なカード（sold-out でない）が1枚（金のみ）
+    const activeCards = page.locator('#variant-grid-items .variant-card:not(.sold-out)');
+    await expect(activeCards).toHaveCount(1);
+    // タップで追加できること
+    await activeCards.first().click();
+    await expect(activeCards.first().locator('.badge-qty')).toContainText('×1');
   });
 });
