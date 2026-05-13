@@ -12,7 +12,7 @@ async function postWithBackoff(url, body, maxRetries = 4) {
     try {
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(body),
       });
       if (res.status === 429) {

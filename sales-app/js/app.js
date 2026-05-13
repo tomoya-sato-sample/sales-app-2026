@@ -487,7 +487,7 @@ async function recordSale() {
   try {
     const res = await fetch(CONFIG.GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'sale', ...tx }),
     });
     const json = await res.json();
@@ -522,7 +522,11 @@ function renderComplete(synced) {
 // --- Screen Management ---
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(`screen-${name}`).classList.add('active');
+  const screen = document.getElementById(`screen-${name}`);
+  screen.classList.add('active');
+  screen.scrollTop = 0;
+  const scroll = screen.querySelector('.main-scroll');
+  if (scroll) scroll.scrollTop = 0;
 }
 
 // --- Pending Badge ---
