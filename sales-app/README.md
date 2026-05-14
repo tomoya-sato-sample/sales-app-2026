@@ -118,7 +118,7 @@ curl "${GAS_URL}?action=summary"
 
 # 販売記録POSTテスト
 curl -X POST "${GAS_URL}" \
-  -H "Content-Type: application/json" \
+  -H "Content-Type: text/plain" \
   -d '{
     "action": "sale",
     "tx_id": "tx_test001",
@@ -130,6 +130,17 @@ curl -X POST "${GAS_URL}" \
     "payment": "cash",
     "client_time": "2026-06-13T11:31:55"
   }'
+
+# テストデータ初期化（sales_log / stock_log をクリア）
+# ※ RESET_SECRET はスクリプトプロパティで設定した値
+curl -X POST "${GAS_URL}" \
+  -H "Content-Type: text/plain" \
+  -d '{"action":"reset_test","secret":"YOUR_RESET_SECRET"}'
+
+# 商品シードデータ投入
+curl -X POST "${GAS_URL}" \
+  -H "Content-Type: text/plain" \
+  -d '{"action":"seed_products","secret":"YOUR_RESET_SECRET"}'
 ```
 
 ---

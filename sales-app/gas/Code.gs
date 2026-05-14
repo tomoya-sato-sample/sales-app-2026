@@ -9,6 +9,13 @@ function doPost(e) {
     if (data.action === 'stock_adjust') {
       return handleStockAdjust(data);
     }
+    // 管理系エンドポイント（secret はリクエストボディで渡す）
+    if (data.action === 'reset_test') {
+      return resetTestData(data.secret);
+    }
+    if (data.action === 'seed_products') {
+      return seedProducts(data.secret);
+    }
     return jsonResponse({ status: 'error', message: 'Unknown action' });
   } catch (err) {
     return jsonResponse({ status: 'error', message: err.message });
@@ -21,8 +28,6 @@ function doGet(e) {
     if (action === 'products')   return getProducts();
     if (action === 'staff')      return getStaff();
     if (action === 'summary')    return getSummary();
-    if (action === 'reset_test')    return resetTestData(e.parameter.secret);
-    if (action === 'seed_products') return seedProducts(e.parameter.secret);
     return jsonResponse({ status: 'error', message: 'Unknown action' });
   } catch (err) {
     return jsonResponse({ status: 'error', message: err.message });

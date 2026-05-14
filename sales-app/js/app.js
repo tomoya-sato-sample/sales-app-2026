@@ -6,6 +6,15 @@ import {
 } from './db.js';
 import { syncPending, startSync } from './sync.js';
 
+// --- HTML Escaping (XSS対策) ---
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // --- State ---
 let state = {
   staff: [],
@@ -68,9 +77,9 @@ function renderStaffScreen() {
   const grid = document.getElementById('staff-grid');
   grid.innerHTML = state.staff.length
     ? state.staff.map(s => `
-        <div class="staff-card" data-id="${s.id}" data-name="${s.name}" data-area="${s.area}">
-          <div class="name">${s.name}</div>
-          <div class="area">${s.area}</div>
+        <div class="staff-card" data-id="${esc(s.id)}" data-name="${esc(s.name)}" data-area="${esc(s.area)}">
+          <div class="name">${esc(s.name)}</div>
+          <div class="area">${esc(s.area)}</div>
         </div>`).join('')
     : '<p class="loading">スタッフ情報を読み込めませんでした</p>';
 
@@ -128,9 +137,9 @@ function calcSoldStock() {
 // --- Product Visual Helper ---
 function productVisual(emoji, name, cls = '') {
   if (emoji && emoji.startsWith('http')) {
-    return `<img src="${emoji}" class="product-img${cls ? ' ' + cls : ''}" alt="${name}" loading="lazy">`;
+    return `<img src="${esc(emoji)}" class="product-img${cls ? ' ' + cls : ''}" alt="${esc(name)}" loading="lazy">`;
   }
-  return `<div class="product-emoji">${emoji || '🛒'}</div>`;
+  return `<div class="product-emoji">${esc(emoji || '🛒')}</div>`;
 }
 
 // --- Group Config ---
@@ -180,7 +189,7 @@ function renderProducts() {
       : allSoldOut ? '<span class="product-badge badge-sold">SOLD OUT</span>' : '';
 
     const swatches = items.map(p =>
-      `<span class="swatch" style="background:${variantSwatchColor(p.name)};border-color:${variantSwatchBorder(p.name)}" title="${p.name}"></span>`
+      `<span class="swatch" style="background:${variantSwatchColor(p.name)};border-color:${variantSwatchBorder(p.name)}" title="${esc(p.name)}"></span>`
     ).join('');
 
     const groupImage = items[0].emoji || '';
@@ -212,11 +221,11 @@ function renderProducts() {
     else if (qty > 0) badge = `<span class="product-badge badge-qty">×${qty}</span>`;
     else if (lowStock) badge = '<span class="product-badge badge-low">残少</span>';
 
-    return `<div class="${cls}" data-id="${p.id}" ${soldOut ? 'aria-disabled="true"' : ''}>
+    return `<div class="${cls}" data-id="${esc(p.id)}" ${soldOut ? 'aria-disabled="true"' : ''}>
       ${badge}
-      ${qty > 0 ? `<button class="card-minus-btn" data-id="${p.id}">－</button>` : ''}
+      ${qty > 0 ? `<button class="card-minus-btn" data-id="${esc(p.id)}">－</button>` : ''}
       ${productVisual(p.emoji, p.name)}
-      <div class="pname">${p.name}</div>
+      <div class="pname">${esc(p.name)}</div>
       <div class="price">¥${p.price.toLocaleString()}</div>
       ${!soldOut ? `<div class="card-stock ${lowStock ? 'low' : ''}">残 ${stock}</div>` : ''}
     </div>`;
@@ -275,11 +284,11 @@ function renderVariantModal(category) {
     if (soldOut)   badge = '<span class="product-badge badge-sold">SOLD OUT</span>';
     else if (qty > 0) badge = `<span class="product-badge badge-qty">×${qty}</span>`;
 
-    return `<div class="variant-card${soldOut ? ' sold-out' : qty > 0 ? ' in-cart' : ''}" data-id="${p.id}" ${soldOut ? 'aria-disabled="true"' : ''}>
+    return `<div class="variant-card${soldOut ? ' sold-out' : qty > 0 ? ' in-cart' : ''}" data-id="${esc(p.id)}" ${soldOut ? 'aria-disabled="true"' : ''}>
       ${badge}
-      ${qty > 0 ? `<button class="variant-minus-btn" data-id="${p.id}">－</button>` : ''}
+      ${qty > 0 ? `<button class="variant-minus-btn" data-id="${esc(p.id)}">－</button>` : ''}
       <div class="swatch-lg" style="background:${variantSwatchColor(p.name)};border-color:${variantSwatchBorder(p.name)}"></div>
-      <div class="variant-label">${label}</div>
+      <div class="variant-label">${esc(label)}</div>
       <div class="variant-stock ${lowStock ? 'low' : soldOut ? 'out' : ''}">
         ${soldOut ? 'SOLD OUT' : `残 ${stock}`}
       </div>
@@ -352,16 +361,16 @@ function renderCheckout() {
     });
 
   document.getElementById('checkout-items').innerHTML = items.map(item => `
-    <div class="checkout-item" data-id="${item.id}">
+    <div class="checkout-item" data-id="${esc(item.id)}">
       <div class="item-visual">${productVisual(item.emoji, item.name, 'item-img')}</div>
       <div class="item-info">
-        <div class="item-name">${item.name}</div>
+        <div class="item-name">${esc(item.name)}</div>
         <div class="item-price">¥${item.price.toLocaleString()} × <span class="qty-display">${item.qty}</span></div>
       </div>
       <div class="qty-ctrl">
-        <button class="qty-btn" data-action="minus" data-id="${item.id}">－</button>
+        <button class="qty-btn" data-action="minus" data-id="${esc(item.id)}">－</button>
         <span class="qty-val">${item.qty}</span>
-        <button class="qty-btn" data-action="plus" data-id="${item.id}">＋</button>
+        <button class="qty-btn" data-action="plus" data-id="${esc(item.id)}">＋</button>
       </div>
     </div>`).join('');
 
@@ -534,7 +543,7 @@ async function recordSale() {
 function renderComplete(synced) {
   const tx = state.lastTx;
   const rows = tx.items.map(i =>
-    `<div class="row"><span>${i.name} ×${i.qty}</span><span class="val">¥${(i.price * i.qty).toLocaleString()}</span></div>`
+    `<div class="row"><span>${esc(i.name)} ×${i.qty}</span><span class="val">¥${(i.price * i.qty).toLocaleString()}</span></div>`
   ).join('');
   document.getElementById('complete-rows').innerHTML = rows;
   document.getElementById('complete-total').textContent = `¥${tx.total.toLocaleString()}`;

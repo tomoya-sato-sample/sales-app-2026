@@ -1,5 +1,14 @@
 import { CONFIG } from './config.js';
 
+// --- HTML Escaping (XSS対策) ---
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 let charts = {};
 let pollTimer = null;
 
@@ -122,7 +131,7 @@ function renderStaffTable(data) {
     .sort((a, b) => b.amount - a.amount)
     .map(s => `
       <tr>
-        <td>${s.name}</td>
+        <td>${esc(s.name)}</td>
         <td style="text-align:right">${s.tx_count}</td>
         <td style="text-align:right">¥${s.amount.toLocaleString()}</td>
       </tr>`).join('');
@@ -143,7 +152,7 @@ function renderStockAlerts(data) {
   el.innerHTML = alerts.map(p => {
     const icon = p.current <= 0 ? '🔴' : '🟡';
     const label = p.current <= 0 ? '売り切れ' : `残${p.current}`;
-    return `<div class="alert-item">${icon} <strong>${p.name}</strong> — ${label}</div>`;
+    return `<div class="alert-item">${icon} <strong>${esc(p.name)}</strong> — ${label}</div>`;
   }).join('');
 }
 
@@ -160,7 +169,7 @@ function renderStockTable(data) {
     const color = p.current <= 0 ? '#c0392b' : p.current <= CONFIG.LOW_STOCK_THRESHOLD ? '#e67e22' : '#27ae60';
     const label = p.current <= 0 ? '売切' : p.current <= CONFIG.LOW_STOCK_THRESHOLD ? '残少' : '在庫あり';
     return `<tr>
-      <td>${p.name}</td>
+      <td>${esc(p.name)}</td>
       <td style="text-align:right">${p.init_stock}</td>
       <td style="text-align:right;font-weight:700;color:${color}">${p.current}</td>
       <td style="text-align:right">${sold >= 0 ? sold : '—'}</td>
