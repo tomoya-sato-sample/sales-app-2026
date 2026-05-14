@@ -199,6 +199,14 @@ function getSummary() {
     });
   }
 
+  // 商品名・在庫詳細（ダッシュボード表示用）
+  const stockDetail = Object.values(productMap).map(p => ({
+    id: p.id,
+    name: p.name,
+    init_stock: p.init_stock,
+    current: currentStock[p.id] ?? p.init_stock,
+  }));
+
   return jsonResponse({
     action: 'summary',
     data: {
@@ -208,6 +216,7 @@ function getSummary() {
       by_payment: byPayment,
       by_staff: Object.values(byStaff),
       current_stock: currentStock,
+      stock_detail: stockDetail,
       updated_at: new Date().toISOString()
     }
   });

@@ -20,7 +20,7 @@ function updateKPIs(data) {
 }
 
 function renderProductChart(data) {
-  const labels = data.by_product.slice(0, 10).map(p => `${p.emoji} ${p.name}`);
+  const labels = data.by_product.slice(0, 10).map(p => p.name);
   const values = data.by_product.slice(0, 10).map(p => p.amount);
 
   if (charts.product) {
@@ -130,21 +130,42 @@ function renderStaffTable(data) {
 
 function renderStockAlerts(data) {
   const LOW = CONFIG.LOW_STOCK_THRESHOLD;
-  const alerts = Object.entries(data.current_stock)
-    .filter(([, v]) => v <= LOW)
-    .sort((a, b) => a[1] - b[1]);
+  const detail = data.stock_detail || [];
+  const alerts = detail.filter(p => p.current <= LOW).sort((a, b) => a.current - b.current);
 
   const el = document.getElementById('stock-alerts');
   if (!alerts.length) {
     el.innerHTML = '<p style="color:#666;font-size:14px">在庫アラートなし</p>';
-    document.title = '本部ダッシュボード — 模擬店レジ';
+    document.title = '本部ダッシュボード — 物販レジ';
     return;
   }
-  document.title = '(!) 本部ダッシュボード — 模擬店レジ';
-  el.innerHTML = alerts.map(([id, stock]) => {
-    const icon = stock <= 0 ? '🔴' : '🟡';
-    const label = stock <= 0 ? '売り切れ' : `残${stock}`;
-    return `<div class="alert-item">${icon} <strong>${id}</strong> — ${label}</div>`;
+  document.title = '(!) 本部ダッシュボード — 物販レジ';
+  el.innerHTML = alerts.map(p => {
+    const icon = p.current <= 0 ? '🔴' : '🟡';
+    const label = p.current <= 0 ? '売り切れ' : `残${p.current}`;
+    return `<div class="alert-item">${icon} <strong>${p.name}</strong> — ${label}</div>`;
+  }).join('');
+}
+
+function renderStockTable(data) {
+  const detail = data.stock_detail || [];
+  const tbody = document.getElementById('stock-tbody');
+  if (!detail.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:#aaa">データなし</td></tr>';
+    return;
+  }
+  tbody.innerHTML = detail.map(p => {
+    const sold = p.init_stock - p.current;
+    const pct = p.init_stock > 0 ? Math.round(p.current / p.init_stock * 100) : 0;
+    const color = p.current <= 0 ? '#c0392b' : p.current <= CONFIG.LOW_STOCK_THRESHOLD ? '#e67e22' : '#27ae60';
+    const label = p.current <= 0 ? '売切' : p.current <= CONFIG.LOW_STOCK_THRESHOLD ? '残少' : '在庫あり';
+    return `<tr>
+      <td>${p.name}</td>
+      <td style="text-align:right">${p.init_stock}</td>
+      <td style="text-align:right;font-weight:700;color:${color}">${p.current}</td>
+      <td style="text-align:right">${sold >= 0 ? sold : '—'}</td>
+      <td style="text-align:right;color:${color};font-weight:700">${label}</td>
+    </tr>`;
   }).join('');
 }
 
@@ -161,6 +182,7 @@ async function refresh() {
     renderHourlyChart(data);
     renderStaffTable(data);
     renderStockAlerts(data);
+    renderStockTable(data);
   } catch (err) {
     document.getElementById('updated-at').textContent = '更新失敗';
   } finally {
