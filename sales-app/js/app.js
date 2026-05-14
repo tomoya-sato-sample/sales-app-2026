@@ -172,6 +172,8 @@ function renderProducts() {
 
     const totalInCart = items.reduce((s, p) => s + (state.cart[p.id] || 0), 0);
     const allSoldOut = items.every(p => (state.currentStock[p.id] ?? 0) <= 0);
+    const totalStock = items.reduce((s, p) => s + (state.currentStock[p.id] ?? 0), 0);
+    const lowStock = !allSoldOut && totalStock <= CONFIG.LOW_STOCK_THRESHOLD * items.length;
 
     const badge = totalInCart > 0
       ? `<span class="product-badge badge-qty">×${totalInCart}</span>`
@@ -189,6 +191,7 @@ function renderProducts() {
         <div class="pname">${config.name}</div>
         <div class="swatches">${swatches}</div>
         <div class="group-sub">${items.length}種類 ¥${Math.min(...items.map(p => p.price)).toLocaleString()}</div>
+        ${!allSoldOut ? `<div class="card-stock ${lowStock ? 'low' : ''}">残 ${totalStock}</div>` : ''}
       </div>
     </div>`;
   }
@@ -215,6 +218,7 @@ function renderProducts() {
       ${productVisual(p.emoji, p.name)}
       <div class="pname">${p.name}</div>
       <div class="price">¥${p.price.toLocaleString()}</div>
+      ${!soldOut ? `<div class="card-stock ${lowStock ? 'low' : ''}">残 ${stock}</div>` : ''}
     </div>`;
   }).join('');
 

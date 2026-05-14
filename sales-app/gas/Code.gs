@@ -165,6 +165,7 @@ function getSummary() {
   const byProduct = {};
   const byPayment = { cash: 0, ic: 0, qr: 0, card: 0 };
   const byStaff = {};
+  const hourlyMap = {};
 
   for (let i = 1; i < salesRows.length; i++) {
     const r = salesRows[i];
@@ -172,6 +173,13 @@ function getSummary() {
     totalTx++;
     const total = Number(r[5]);
     totalAmount += total;
+
+    // 時間帯別集計
+    try {
+      const hour = new Date(r[1]).getHours();
+      if (!hourlyMap[hour]) hourlyMap[hour] = 0;
+      hourlyMap[hour] += total;
+    } catch (_) {}
 
     const payment = r[6];
     if (byPayment[payment] !== undefined) byPayment[payment] += total;
@@ -199,6 +207,11 @@ function getSummary() {
     });
   }
 
+  // 時間帯別を配列化（存在する時間のみ）
+  const hourly = Object.entries(hourlyMap)
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([hour, amount]) => ({ hour: Number(hour), amount }));
+
   // 商品名・在庫詳細（ダッシュボード表示用）
   const stockDetail = Object.values(productMap).map(p => ({
     id: p.id,
@@ -217,6 +230,7 @@ function getSummary() {
       by_staff: Object.values(byStaff),
       current_stock: currentStock,
       stock_detail: stockDetail,
+      hourly,
       updated_at: new Date().toISOString()
     }
   });

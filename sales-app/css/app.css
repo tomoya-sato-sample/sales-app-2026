@@ -162,6 +162,8 @@ html, body {
 }
 .product-card .pname { font-size: 14px; font-weight: 700; margin-top: 6px; }
 .product-card .price { font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 2px; }
+.card-stock { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+.card-stock.low { color: var(--warn); font-weight: 700; }
 .product-badge {
   position: absolute;
   top: 6px;

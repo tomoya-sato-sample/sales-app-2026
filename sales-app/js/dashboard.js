@@ -185,6 +185,7 @@ async function refresh() {
     renderStockTable(data);
   } catch (err) {
     document.getElementById('updated-at').textContent = '更新失敗';
+    document.getElementById('stock-tbody').innerHTML = '<tr><td colspan="5" style="color:#c0392b">取得失敗</td></tr>';
   } finally {
     btn.disabled = false;
     btn.textContent = '手動更新';
