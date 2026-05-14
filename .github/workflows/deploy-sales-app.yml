@@ -27,6 +27,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Update CACHE_VERSION with build timestamp
+        run: |
+          BUILD_TS=$(date -u +%Y%m%d%H%M%S)
+          sed -i "s/const CACHE_VERSION = '[^']*'/const CACHE_VERSION = '${BUILD_TS}'/" sales-app/sw.js
+          echo "CACHE_VERSION set to ${BUILD_TS}"
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
