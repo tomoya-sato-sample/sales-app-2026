@@ -59,6 +59,17 @@ html, body {
   display: none;
 }
 .app-header .pending-badge.visible { display: inline-block; }
+.clear-cart-btn {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.35);
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.clear-cart-btn.hidden { display: none; }
 
 /* Screen A: Staff Selection */
 #screen-staff {

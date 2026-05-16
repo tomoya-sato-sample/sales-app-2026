@@ -92,6 +92,9 @@ function renderStaffScreen() {
       };
       localStorage.setItem('currentStaff', JSON.stringify(state.currentStaff));
       document.getElementById('staff-display').textContent = state.currentStaff.name;
+      // カートはすでにクリア済みなので画面を再描画してから遷移
+      renderProducts();
+      updateCartFooter();
       showScreen('main');
     });
   });
@@ -335,6 +338,14 @@ function updateCartFooter() {
   document.getElementById('cart-total').textContent = `¥${total.toLocaleString()}`;
   document.getElementById('cart-count').textContent = `${count}点`;
   footer.classList.toggle('empty', count === 0);
+  // カートクリアボタン: カートに1件以上あるときだけ表示
+  document.getElementById('clear-cart-btn').classList.toggle('hidden', count === 0);
+}
+
+function clearCart() {
+  state.cart = {};
+  renderProducts();
+  updateCartFooter();
 }
 
 function calcCartTotal() {
@@ -597,10 +608,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderProducts();
     showScreen('main');
   });
+  document.getElementById('clear-cart-btn').addEventListener('click', clearCart);
+
   document.getElementById('change-staff-btn').addEventListener('click', () => {
     localStorage.removeItem('currentStaff');
     state.currentStaff = null;
     state.cart = {};
+    updateCartFooter(); // クリアボタンを非表示に
     renderStaffScreen();
     showScreen('staff');
   });

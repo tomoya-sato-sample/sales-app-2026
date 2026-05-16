@@ -126,6 +126,56 @@ test.describe('B: 商品グリッド', () => {
   test('B-13: カートが空のときフッターは empty クラスを持つ', async ({ page }) => {
     await expect(page.locator('#cart-footer')).toHaveClass(/empty/);
   });
+
+  test('B-14: カートが空のときクリアボタンは非表示', async ({ page }) => {
+    await expect(page.locator('#clear-cart-btn')).toHaveClass(/hidden/);
+  });
+
+  test('B-15: カートに商品を追加するとクリアボタンが表示される', async ({ page }) => {
+    await page.locator('.product-card[data-id="chopstick_001"]').click();
+    await expect(page.locator('#clear-cart-btn')).not.toHaveClass(/hidden/);
+  });
+
+  test('B-16: クリアボタンタップでカートが空になりボタンも非表示になる', async ({ page }) => {
+    // 2商品を追加
+    await page.locator('.product-card[data-id="chopstick_001"]').click();
+    await page.locator('.product-card[data-id="item_low"]').click();
+    await expect(page.locator('#cart-count')).toContainText('2点');
+    await expect(page.locator('#clear-cart-btn')).not.toHaveClass(/hidden/);
+
+    // クリア
+    await page.locator('#clear-cart-btn').click();
+
+    // カートが空になること
+    await expect(page.locator('#cart-footer')).toHaveClass(/empty/);
+    await expect(page.locator('#cart-count')).toContainText('0点');
+    // クリアボタンも非表示になること
+    await expect(page.locator('#clear-cart-btn')).toHaveClass(/hidden/);
+    // 商品カードのバッジも消えること
+    await expect(page.locator('[data-id="chopstick_001"] .badge-qty')).toBeHidden();
+    await expect(page.locator('[data-id="item_low"] .badge-qty')).toBeHidden();
+  });
+
+  test('B-17: 担当者変更後、商品選択状態がリセットされて画面に反映される', async ({ page }) => {
+    // 商品をカートに追加
+    await page.locator('.product-card[data-id="chopstick_001"]').click();
+    await expect(page.locator('.product-card[data-id="chopstick_001"]')).toHaveClass(/in-cart/);
+    await expect(page.locator('#clear-cart-btn')).not.toHaveClass(/hidden/);
+
+    // 担当者変更
+    await page.locator('#change-staff-btn').click();
+    await expect(page.locator('#screen-staff')).toBeVisible();
+
+    // 別の担当者を選択して戻る
+    await page.locator('.staff-card').first().click();
+    await expect(page.locator('#screen-main')).toBeVisible();
+
+    // カートがリセットされていること
+    await expect(page.locator('#cart-footer')).toHaveClass(/empty/);
+    await expect(page.locator('#clear-cart-btn')).toHaveClass(/hidden/);
+    await expect(page.locator('.product-card[data-id="chopstick_001"]')).not.toHaveClass(/in-cart/);
+    await expect(page.locator('[data-id="chopstick_001"] .badge-qty')).toBeHidden();
+  });
 });
 
 test.describe('V: バリアントモーダル', () => {
