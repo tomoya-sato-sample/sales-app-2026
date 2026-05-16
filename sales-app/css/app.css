@@ -68,8 +68,12 @@ html, body {
   font-size: 12px;
   cursor: pointer;
   flex-shrink: 0;
+  transition: opacity .15s;
 }
-.clear-cart-btn.hidden { display: none; }
+.clear-cart-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
 
 /* Screen A: Staff Selection */
 #screen-staff {

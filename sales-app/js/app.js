@@ -338,8 +338,8 @@ function updateCartFooter() {
   document.getElementById('cart-total').textContent = `¥${total.toLocaleString()}`;
   document.getElementById('cart-count').textContent = `${count}点`;
   footer.classList.toggle('empty', count === 0);
-  // カートクリアボタン: カートに1件以上あるときだけ表示
-  document.getElementById('clear-cart-btn').classList.toggle('hidden', count === 0);
+  // カートクリアボタン: カートが空のときは非活性
+  document.getElementById('clear-cart-btn').disabled = count === 0;
 }
 
 function clearCart() {

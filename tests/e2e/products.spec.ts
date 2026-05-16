@@ -127,21 +127,21 @@ test.describe('B: 商品グリッド', () => {
     await expect(page.locator('#cart-footer')).toHaveClass(/empty/);
   });
 
-  test('B-14: カートが空のときクリアボタンは非表示', async ({ page }) => {
-    await expect(page.locator('#clear-cart-btn')).toHaveClass(/hidden/);
+  test('B-14: カートが空のときクリアボタンは非活性', async ({ page }) => {
+    await expect(page.locator('#clear-cart-btn')).toBeDisabled();
   });
 
-  test('B-15: カートに商品を追加するとクリアボタンが表示される', async ({ page }) => {
+  test('B-15: カートに商品を追加するとクリアボタンが活性化する', async ({ page }) => {
     await page.locator('.product-card[data-id="chopstick_001"]').click();
-    await expect(page.locator('#clear-cart-btn')).not.toHaveClass(/hidden/);
+    await expect(page.locator('#clear-cart-btn')).toBeEnabled();
   });
 
-  test('B-16: クリアボタンタップでカートが空になりボタンも非表示になる', async ({ page }) => {
+  test('B-16: クリアボタンタップでカートが空になり非活性に戻る', async ({ page }) => {
     // 2商品を追加
     await page.locator('.product-card[data-id="chopstick_001"]').click();
     await page.locator('.product-card[data-id="item_low"]').click();
     await expect(page.locator('#cart-count')).toContainText('2点');
-    await expect(page.locator('#clear-cart-btn')).not.toHaveClass(/hidden/);
+    await expect(page.locator('#clear-cart-btn')).toBeEnabled();
 
     // クリア
     await page.locator('#clear-cart-btn').click();
@@ -149,8 +149,8 @@ test.describe('B: 商品グリッド', () => {
     // カートが空になること
     await expect(page.locator('#cart-footer')).toHaveClass(/empty/);
     await expect(page.locator('#cart-count')).toContainText('0点');
-    // クリアボタンも非表示になること
-    await expect(page.locator('#clear-cart-btn')).toHaveClass(/hidden/);
+    // クリアボタンが非活性に戻ること
+    await expect(page.locator('#clear-cart-btn')).toBeDisabled();
     // 商品カードのバッジも消えること
     await expect(page.locator('[data-id="chopstick_001"] .badge-qty')).toBeHidden();
     await expect(page.locator('[data-id="item_low"] .badge-qty')).toBeHidden();
@@ -160,7 +160,7 @@ test.describe('B: 商品グリッド', () => {
     // 商品をカートに追加
     await page.locator('.product-card[data-id="chopstick_001"]').click();
     await expect(page.locator('.product-card[data-id="chopstick_001"]')).toHaveClass(/in-cart/);
-    await expect(page.locator('#clear-cart-btn')).not.toHaveClass(/hidden/);
+    await expect(page.locator('#clear-cart-btn')).toBeEnabled();
 
     // 担当者変更
     await page.locator('#change-staff-btn').click();
@@ -172,7 +172,7 @@ test.describe('B: 商品グリッド', () => {
 
     // カートがリセットされていること
     await expect(page.locator('#cart-footer')).toHaveClass(/empty/);
-    await expect(page.locator('#clear-cart-btn')).toHaveClass(/hidden/);
+    await expect(page.locator('#clear-cart-btn')).toBeDisabled();
     await expect(page.locator('.product-card[data-id="chopstick_001"]')).not.toHaveClass(/in-cart/);
     await expect(page.locator('[data-id="chopstick_001"] .badge-qty')).toBeHidden();
   });
