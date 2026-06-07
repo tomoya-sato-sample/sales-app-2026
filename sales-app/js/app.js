@@ -383,6 +383,11 @@ function calcCartTotal() {
 function openCheckout() {
   const count = Object.values(state.cart).reduce((s, v) => s + v, 0);
   if (count === 0) return;
+  // 現金セクションは画面を開くときだけリセット（数量変更時は維持）
+  document.getElementById('cash-received').value = '';
+  document.getElementById('cash-section').classList.add('hidden');
+  document.getElementById('change-row').classList.add('hidden');
+  document.getElementById('change-short').classList.add('hidden');
   renderCheckout();
   showScreen('checkout');
 }
@@ -427,6 +432,7 @@ function renderCheckout() {
   });
 
   // Payment buttons
+  document.getElementById('cash-section').classList.toggle('hidden', state.payment !== 'cash');
   document.querySelectorAll('.payment-btn').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.payment === state.payment);
     btn.onclick = () => {
@@ -445,13 +451,7 @@ function renderCheckout() {
     };
   });
 
-  // 現金セクションをリセット
-  document.getElementById('cash-received').value = '';
-  document.getElementById('cash-section').classList.add('hidden');
-  document.getElementById('change-row').classList.add('hidden');
-  document.getElementById('change-short').classList.add('hidden');
-
-  // 現金受取入力
+  // 現金受取入力（cash-section の表示は openCheckout でリセット済み）
   const cashInput = document.getElementById('cash-received');
   cashInput.oninput = () => updateChange();
   document.querySelectorAll('.bill-btn, .coin-btn').forEach(btn => {
