@@ -26,6 +26,11 @@ function updateKPIs(data) {
   document.getElementById('kpi-amount').textContent = `¥${data.total_amount.toLocaleString()}`;
   document.getElementById('kpi-tx').textContent = `${data.total_tx} 件`;
   document.getElementById('updated-at').textContent = `更新: ${formatTime(data.updated_at)}`;
+
+  const profit = data.total_profit ?? 0;
+  const rate = data.total_amount > 0 ? (profit / data.total_amount * 100) : 0;
+  document.getElementById('kpi-profit').textContent = `¥${Math.round(profit).toLocaleString()}`;
+  document.getElementById('kpi-profit-rate').textContent = `${rate.toFixed(1)}%`;
 }
 
 function renderProductChart(data) {
@@ -156,6 +161,30 @@ function renderStockAlerts(data) {
   }).join('');
 }
 
+function renderProfitTable(data) {
+  const tbody = document.getElementById('profit-tbody');
+  const products = (data.by_product || []).filter(p => p.qty > 0);
+  if (!products.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:#aaa">データなし</td></tr>';
+    return;
+  }
+
+  // 粗利の高い順に並べる
+  const sorted = [...products].sort((a, b) => (b.profit ?? 0) - (a.profit ?? 0));
+  tbody.innerHTML = sorted.map(p => {
+    const profit = p.profit ?? 0;
+    const costTotal = p.cost_total ?? 0;
+    const color = profit >= 0 ? '#27ae60' : '#c0392b';
+    return `<tr>
+      <td>${esc(p.name)}</td>
+      <td style="text-align:right">${p.qty}</td>
+      <td style="text-align:right">¥${p.amount.toLocaleString()}</td>
+      <td style="text-align:right">¥${Math.round(costTotal).toLocaleString()}</td>
+      <td style="text-align:right;font-weight:700;color:${color}">¥${Math.round(profit).toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+}
+
 function renderStockTable(data) {
   const detail = data.stock_detail || [];
   const tbody = document.getElementById('stock-tbody');
@@ -192,6 +221,7 @@ async function refresh() {
     renderStaffTable(data);
     renderStockAlerts(data);
     renderStockTable(data);
+    renderProfitTable(data);
   } catch (err) {
     document.getElementById('updated-at').textContent = '更新失敗';
     document.getElementById('stock-tbody').innerHTML = '<tr><td colspan="5" style="color:#c0392b">取得失敗</td></tr>';
