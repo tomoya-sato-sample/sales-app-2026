@@ -101,6 +101,30 @@ function renderStaffScreen() {
 }
 
 // --- Products ---
+async function refreshProducts() {
+  const btn = document.getElementById('refresh-products-btn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.classList.add('spinning');
+  try {
+    const products = await fetchProducts();
+    if (products.length) {
+      state.products = products;
+      initStock();
+      renderProducts();
+      updateCartFooter();
+      showToast(`商品データを更新しました（${products.length}件）`);
+    } else {
+      showToast('取得できませんでした。オフラインの可能性があります', 3000);
+    }
+  } catch (_) {
+    showToast('更新に失敗しました', 3000);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('spinning');
+  }
+}
+
 async function loadProducts() {
   let products = await getProducts();
   if (!products.length) {
@@ -609,6 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showScreen('main');
   });
   document.getElementById('clear-cart-btn').addEventListener('click', clearCart);
+  document.getElementById('refresh-products-btn').addEventListener('click', refreshProducts);
 
   document.getElementById('change-staff-btn').addEventListener('click', () => {
     localStorage.removeItem('currentStaff');

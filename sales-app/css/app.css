@@ -59,6 +59,27 @@ html, body {
   display: none;
 }
 .app-header .pending-badge.visible { display: inline-block; }
+.header-icon-btn {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.35);
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: opacity .15s, transform .3s;
+}
+.header-icon-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+.header-icon-btn.spinning {
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .clear-cart-btn {
   background: rgba(255,255,255,.15);
   border: 1px solid rgba(255,255,255,.35);
