@@ -306,26 +306,27 @@ function seedProducts(secret) {
     return jsonResponse({ status: 'error', message: 'Unauthorized' });
   }
 
+  const IMG = 'https://ssk2026.bam-o-rama.com/buppan/img/';
   // id, name, price, barcode, emoji, init_stock, category, cost
   const SEED = [
-    ['id',                  'name',                       'price', 'barcode', 'emoji', 'init_stock', 'category',   'cost'],
-    ['ecobag_kuro_logo',    'エコバッグ（黒）済々黌ロゴ',    1000,    '',        '👜',    31,           'ecobag',     411.67],
-    ['ecobag_aka_kinako',   'エコバッグ（赤）きなこ',         1000,    '',        '👜',    40,           'ecobag',     411.67],
-    ['ecobag_kuro_senta',   'エコバッグ（黒）せんた',         1000,    '',        '👜',    34,           'ecobag',     411.67],
-    ['ecobag_khaki_kinasen','エコバッグ（カーキ）きなせん',   1000,    '',        '👜',    16,           'ecobag',     411.67],
-    ['hashi_001',           '架箸',                          1500,    '',        '🥢',    47,           'other',      709.50],
-    ['towel_001',           'タオル',                        1500,    '',        '🧣',    47,           'other',      711.00],
-    ['quo_001',             'QUOカード',                     1000,    '',        '💳',    48,           'other',      684.60],
-    ['ramen_001',           '黄亭ラーメン',                  2000,    '',        '🍜',    226,          'other',      972.00],
-    ['pen_001',             'ロゴ単色ボールペン',              300,    '',        '✒️',    68,           'other',      169.40],
-    ['memo_001',            'メモ帳',                         500,    '',        '📓',    163,          'other',      165.35],
-    ['shoehorn_kurokane',   '靴ベラ　黒金',                  3000,    '',        '✨',    17,           'shoehorn',  2250.00],
-    ['shoehorn_kuroemboss', '靴ベラ　黒エンボス',            3000,    '',        '✨',    18,           'shoehorn',  2250.00],
-    ['shoehorn_aokane',     '靴ベラ　青金',                  3000,    '',        '✨',    19,           'shoehorn',  2250.00],
-    ['shoehorn_aoemboss',   '靴ベラ　青エンボス',            3000,    '',        '✨',    16,           'shoehorn',  2250.00],
-    ['book_signed',         '大竹本（サイン入り）',           2000,    '',        '📗',    19,           'other',     1980.00],
-    ['book_unsigned',       '大竹本（サインなし）',           2000,    '',        '📗',    30,           'other',     1584.00],
-    ['kumamoto_set',        '熊本名産品セット',               1000,    '',        '🎁',    50,           'other',      695.84],
+    ['id',                  'name',                       'price', 'barcode', 'emoji',                         'init_stock', 'category',   'cost'],
+    ['ecobag_kuro_logo',    'エコバッグ（黒）済々黌ロゴ',    1000,    '',        IMG+'ecobag.webp',               31,           'ecobag',     411.67],
+    ['ecobag_aka_kinako',   'エコバッグ（赤）きなこ',         1000,    '',        IMG+'ecobag.webp',               40,           'ecobag',     411.67],
+    ['ecobag_kuro_senta',   'エコバッグ（黒）せんた',         1000,    '',        IMG+'ecobag.webp',               34,           'ecobag',     411.67],
+    ['ecobag_khaki_kinasen','エコバッグ（カーキ）きなせん',   1000,    '',        IMG+'ecobag.webp',               16,           'ecobag',     411.67],
+    ['hashi_001',           '架箸',                          1500,    '',        IMG+'chopstick.webp',            47,           'other',      709.50],
+    ['towel_001',           'タオル',                        1500,    '',        IMG+'towel.webp',                47,           'other',      711.00],
+    ['quo_001',             'QUOカード',                     1000,    '',        '💳',                            48,           'other',      684.60],
+    ['ramen_001',           '黄亭ラーメン',                  2000,    '',        IMG+'ramen.webp',                226,          'other',      972.00],
+    ['pen_001',             'ロゴ単色ボールペン',              300,    '',        IMG+'pen.webp',                  68,           'other',      169.40],
+    ['memo_001',            'メモ帳',                         500,    '',        IMG+'memocho.webp',              163,          'other',      165.35],
+    ['shoehorn_kurokane',   '靴ベラ　黒金',                  3000,    '',        IMG+'kutsubera.webp',            17,           'shoehorn',  2250.00],
+    ['shoehorn_kuroemboss', '靴ベラ　黒エンボス',            3000,    '',        IMG+'kutsubera.webp',            18,           'shoehorn',  2250.00],
+    ['shoehorn_aokane',     '靴ベラ　青金',                  3000,    '',        IMG+'kutsubera.webp',            19,           'shoehorn',  2250.00],
+    ['shoehorn_aoemboss',   '靴ベラ　青エンボス',            3000,    '',        IMG+'kutsubera.webp',            16,           'shoehorn',  2250.00],
+    ['book_signed',         '大竹本（サイン入り）',           2000,    '',        IMG+'book.webp',                 19,           'other',     1980.00],
+    ['book_unsigned',       '大竹本（サインなし）',           2000,    '',        IMG+'book.webp',                 30,           'other',     1584.00],
+    ['kumamoto_set',        '熊本名産品セット',               1000,    '',        '🎁',                            50,           'other',      695.84],
   ];
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
