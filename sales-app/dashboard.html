@@ -78,6 +78,10 @@
       <div class="label">粗利率</div>
       <div class="value" id="kpi-profit-rate" style="color:#27ae60">—</div>
     </div>
+    <div class="kpi-card">
+      <div class="label">平均客単価</div>
+      <div class="value" id="kpi-avg">—</div>
+    </div>
   </div>
 
   <!-- Charts Row -->
@@ -92,10 +96,10 @@
     </div>
   </div>
 
-  <!-- Hourly Chart -->
+  <!-- Category Chart -->
   <div class="card">
-    <h2>📈 時間帯別売上推移</h2>
-    <div class="chart-wrap"><canvas id="chart-hourly"></canvas></div>
+    <h2>🏷️ カテゴリ別売上</h2>
+    <div class="chart-wrap"><canvas id="chart-category"></canvas></div>
   </div>
 
   <!-- Staff + Stock Alerts -->
@@ -117,8 +121,8 @@
   <div class="card">
     <h2>📦 在庫状況</h2>
     <table>
-      <thead><tr><th>商品名</th><th style="text-align:right">初期在庫</th><th style="text-align:right">現在庫</th><th style="text-align:right">販売数</th><th style="text-align:right">状態</th></tr></thead>
-      <tbody id="stock-tbody"><tr><td colspan="5" style="color:#aaa">読み込み中...</td></tr></tbody>
+      <thead><tr><th>商品名</th><th style="text-align:right">初期在庫</th><th style="text-align:right">現在庫</th><th style="text-align:right">販売数</th><th style="text-align:right">消化率</th><th style="text-align:right">状態</th></tr></thead>
+      <tbody id="stock-tbody"><tr><td colspan="6" style="color:#aaa">読み込み中...</td></tr></tbody>
     </table>
   </div>
 

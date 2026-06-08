@@ -31,6 +31,9 @@ function updateKPIs(data) {
   const rate = data.total_amount > 0 ? (profit / data.total_amount * 100) : 0;
   document.getElementById('kpi-profit').textContent = `¥${Math.round(profit).toLocaleString()}`;
   document.getElementById('kpi-profit-rate').textContent = `${rate.toFixed(1)}%`;
+
+  const avg = data.total_tx > 0 ? Math.round(data.total_amount / data.total_tx) : 0;
+  document.getElementById('kpi-avg').textContent = `¥${avg.toLocaleString()}`;
 }
 
 function renderProductChart(data) {
@@ -90,41 +93,37 @@ function renderPaymentChart(data) {
   });
 }
 
-function renderHourlyChart(data) {
-  // Build hourly buckets from sales timestamps via by_product data isn't enough —
-  // we use total_tx and total_amount as static values when no hourly breakdown is available.
-  // If GAS provides hourly data in the future, replace this.
-  if (!data.hourly) return;
+function getCategoryLabel(id) {
+  if (id.startsWith('ecobag'))   return 'エコバッグ';
+  if (id.startsWith('shoehorn')) return '靴ベラ';
+  if (id === 'ramen_001')        return 'ラーメン';
+  if (id.startsWith('book'))     return '本';
+  return 'その他';
+}
 
-  const labels = data.hourly.map(h => `${h.hour}時`);
-  const values = data.hourly.map(h => h.amount);
+function renderCategoryChart(data) {
+  const cats = ['エコバッグ', '靴ベラ', 'ラーメン', '本', 'その他'];
+  const catMap = Object.fromEntries(cats.map(c => [c, 0]));
+  (data.by_product || []).forEach(p => { catMap[getCategoryLabel(p.id)] += p.amount; });
 
-  if (charts.hourly) {
-    charts.hourly.data.labels = labels;
-    charts.hourly.data.datasets[0].data = values;
-    charts.hourly.update();
+  const values = cats.map(c => catMap[c]);
+  const colors = ['#d4611b', '#2980b9', '#f39c12', '#8e44ad', '#7f8c8d'];
+
+  if (charts.category) {
+    charts.category.data.datasets[0].data = values;
+    charts.category.update();
     return;
   }
-  const ctx = document.getElementById('chart-hourly').getContext('2d');
-  charts.hourly = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: '売上 (円)',
-        data: values,
-        borderColor: '#d4611b',
-        backgroundColor: 'rgba(212,97,27,.1)',
-        fill: true,
-        tension: 0.3,
-      }],
-    },
+  const ctx = document.getElementById('chart-category').getContext('2d');
+  charts.category = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: cats, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2 }] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { ticks: { callback: v => `¥${(v / 1000).toFixed(0)}k` } },
+      plugins: {
+        legend: { position: 'right' },
+        tooltip: { callbacks: { label: ctx => ` ¥${ctx.raw.toLocaleString()}` } },
       },
     },
   });
@@ -192,16 +191,31 @@ function renderStockTable(data) {
     tbody.innerHTML = '<tr><td colspan="5" style="color:#aaa">データなし</td></tr>';
     return;
   }
-  tbody.innerHTML = detail.map(p => {
+  // 消化率の高い順に表示
+  const sorted = [...detail].sort((a, b) => {
+    const ra = a.init_stock > 0 ? (a.init_stock - a.current) / a.init_stock : 0;
+    const rb = b.init_stock > 0 ? (b.init_stock - b.current) / b.init_stock : 0;
+    return rb - ra;
+  });
+  tbody.innerHTML = sorted.map(p => {
     const sold = p.init_stock - p.current;
-    const pct = p.init_stock > 0 ? Math.round(p.current / p.init_stock * 100) : 0;
+    const consumePct = p.init_stock > 0 ? Math.round((p.init_stock - p.current) / p.init_stock * 100) : 0;
     const color = p.current <= 0 ? '#c0392b' : p.current <= CONFIG.LOW_STOCK_THRESHOLD ? '#e67e22' : '#27ae60';
     const label = p.current <= 0 ? '売切' : p.current <= CONFIG.LOW_STOCK_THRESHOLD ? '残少' : '在庫あり';
+    const barColor = consumePct >= 80 ? '#c0392b' : consumePct >= 50 ? '#e67e22' : '#27ae60';
     return `<tr>
       <td>${esc(p.name)}</td>
       <td style="text-align:right">${p.init_stock}</td>
       <td style="text-align:right;font-weight:700;color:${color}">${p.current}</td>
       <td style="text-align:right">${sold >= 0 ? sold : '—'}</td>
+      <td style="text-align:right;min-width:80px">
+        <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end">
+          <div style="width:48px;height:6px;background:#e8e2d9;border-radius:3px;overflow:hidden">
+            <div style="width:${consumePct}%;height:100%;background:${barColor};border-radius:3px"></div>
+          </div>
+          <span style="font-weight:700;color:${barColor};font-size:13px">${consumePct}%</span>
+        </div>
+      </td>
       <td style="text-align:right;color:${color};font-weight:700">${label}</td>
     </tr>`;
   }).join('');
@@ -219,7 +233,7 @@ async function refresh() {
     run(updateKPIs);
     run(renderProductChart);
     run(renderPaymentChart);
-    run(renderHourlyChart);
+    run(renderCategoryChart);
     run(renderStaffTable);
     run(renderStockAlerts);
     run(renderStockTable);
