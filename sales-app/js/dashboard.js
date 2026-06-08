@@ -214,16 +214,19 @@ async function refresh() {
   try {
     const json = await fetchSummary();
     const data = json.data;
-    updateKPIs(data);
-    renderProductChart(data);
-    renderPaymentChart(data);
-    renderHourlyChart(data);
-    renderStaffTable(data);
-    renderStockAlerts(data);
-    renderStockTable(data);
-    renderProfitTable(data);
+    // 各セクションを個別に try して、1か所のエラーが全体を止めないようにする
+    const run = (fn) => { try { fn(data); } catch (e) { console.error(fn.name, e); } };
+    run(updateKPIs);
+    run(renderProductChart);
+    run(renderPaymentChart);
+    run(renderHourlyChart);
+    run(renderStaffTable);
+    run(renderStockAlerts);
+    run(renderStockTable);
+    run(renderProfitTable);
   } catch (err) {
-    document.getElementById('updated-at').textContent = '更新失敗';
+    console.error('fetchSummary failed:', err);
+    document.getElementById('updated-at').textContent = '更新失敗（通信エラー）';
     document.getElementById('stock-tbody').innerHTML = '<tr><td colspan="5" style="color:#c0392b">取得失敗</td></tr>';
   } finally {
     btn.disabled = false;
