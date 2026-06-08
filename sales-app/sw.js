@@ -4,7 +4,6 @@ const CACHE_NAME = `sales-app-${CACHE_VERSION}`;
 const APP_SHELL = [
   './',
   './index.html',
-  './dashboard.html',
   './manifest.json',
   './css/app.css',
   './js/config.js',
@@ -12,9 +11,11 @@ const APP_SHELL = [
   './js/sync.js',
   './js/app.js',
   './js/scanner.js',
-  './js/dashboard.js',
   './icon.svg',
 ];
+
+// ダッシュボードはオフライン不要 → Network First で常に最新を取得
+const NETWORK_FIRST_PATHS = ['/dashboard.html', '/dashboard.js'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -45,7 +46,15 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // App Shell: Cache First
+  // ダッシュボード関連: Network First（常に最新、オフライン時はキャッシュにフォールバック）
+  if (NETWORK_FIRST_PATHS.some(p => url.pathname.endsWith(p))) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // App Shell (販売アプリ): Cache First（オフライン対応）
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request))
   );
