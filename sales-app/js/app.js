@@ -1,8 +1,6 @@
 import { CONFIG } from './config.js';
 import {
   saveTransaction, getPendingTransactions,
-  saveProducts, getProducts,
-  saveStaff, getStaff,
 } from './db.js';
 import { syncPending, startSync } from './sync.js';
 
@@ -43,10 +41,8 @@ async function init() {
 
 // --- Staff ---
 async function loadStaff() {
-  let staffList = await getStaff();
-  if (!staffList.length) {
-    staffList = await fetchStaff();
-  }
+  // キャッシュなし：毎回GASから取得
+  const staffList = await fetchStaff();
   state.staff = staffList;
 
   const saved = localStorage.getItem('currentStaff');
@@ -65,10 +61,7 @@ async function fetchStaff() {
   try {
     const res = await fetch(`${CONFIG.GAS_URL}?action=staff`);
     const json = await res.json();
-    if (json.data) {
-      await saveStaff(json.data);
-      return json.data;
-    }
+    if (json.data) return json.data;
   } catch (_) {}
   return [];
 }
@@ -102,21 +95,14 @@ function renderStaffScreen() {
 
 // --- Products ---
 async function refreshProducts() {
+  // キャッシュなし構成では loadProducts() を再実行するだけ
   const btn = document.getElementById('refresh-products-btn');
   if (btn.disabled) return;
   btn.disabled = true;
   btn.classList.add('spinning');
   try {
-    const products = await fetchProducts();
-    if (products.length) {
-      state.products = products;
-      initStock();
-      renderProducts();
-      updateCartFooter();
-      showToast(`商品データを更新しました（${products.length}件）`);
-    } else {
-      showToast('取得できませんでした。オフラインの可能性があります', 3000);
-    }
+    await loadProducts();
+    showToast(`商品データを更新しました（${state.products.length}件）`);
   } catch (_) {
     showToast('更新に失敗しました', 3000);
   } finally {
@@ -126,10 +112,8 @@ async function refreshProducts() {
 }
 
 async function loadProducts() {
-  let products = await getProducts();
-  if (!products.length) {
-    products = await fetchProducts();
-  }
+  // キャッシュなし：毎回GASから取得
+  const products = await fetchProducts();
   state.products = products;
   initStock();
   renderProducts();
@@ -139,10 +123,7 @@ async function fetchProducts() {
   try {
     const res = await fetch(`${CONFIG.GAS_URL}?action=products`);
     const json = await res.json();
-    if (json.data) {
-      await saveProducts(json.data);
-      return json.data;
-    }
+    if (json.data) return json.data;
   } catch (_) {}
   return [];
 }
