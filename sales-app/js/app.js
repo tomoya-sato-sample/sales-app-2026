@@ -68,6 +68,16 @@ async function fetchStaff() {
 
 function renderStaffScreen() {
   const grid = document.getElementById('staff-grid');
+  // 販売終了フラグ
+  if (CONFIG.SALES_CLOSED) {
+    grid.innerHTML = `
+      <div style="text-align:center;padding:40px 16px;color:#888">
+        <div style="font-size:64px;margin-bottom:16px">🏁</div>
+        <div style="font-size:20px;font-weight:700;color:#1a1714;margin-bottom:8px">販売終了しました</div>
+        <div style="font-size:14px">済々黌東京同窓会2026<br>ご来場ありがとうございました</div>
+      </div>`;
+    return;
+  }
   grid.innerHTML = state.staff.length
     ? state.staff.map(s => `
         <div class="staff-card" data-id="${esc(s.id)}" data-name="${esc(s.name)}" data-area="${esc(s.area)}">
